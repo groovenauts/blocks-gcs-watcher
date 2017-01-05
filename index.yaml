@@ -1,0 +1,4 @@
+indexes:
+- kind: Watches
+  properties:
+  - name: ProjectID

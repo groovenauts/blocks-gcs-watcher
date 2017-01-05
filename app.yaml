@@ -1,0 +1,11 @@
+# application: blocks-gcs-watcher # defined when you create your app using google dev console
+# module: default                 # see https://cloud.google.com/appengine/docs/go/
+# version: alpha                  # you can run multiple versions of an app and A/B test
+runtime: go                     # see https://cloud.google.com/appengine/docs/go/
+api_version: go1                # used when appengine supports different go versions
+
+# default_expiration: "1d"        # for CDN serving of static files (use url versioning if long!)
+
+handlers:
+- url: /.*
+  script: _go_app
