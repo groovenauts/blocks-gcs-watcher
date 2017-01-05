@@ -6,9 +6,9 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 
-	"appengine"
-	//"appengine/log"
-	"appengine/datastore"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/datastore"
 )
 
 func init() {
@@ -26,12 +26,12 @@ func createWatch(c echo.Context) error {
 	ctx := appengine.NewContext(req)
 	w := Watch{}
 	if err := c.Bind(&w); err != nil {
-		//log.Errorf(ctx, "Failed to Bind: %v %v cause of %v\n", c, w, err)
+		log.Errorf(ctx, "Failed to Bind: %v %v cause of %v\n", c, w, err)
 		return err
 	}
 	key := datastore.NewIncompleteKey(ctx, "Watches", nil)
 	if _, err := datastore.Put(ctx, key, &w); err != nil {
-		//log.Errorf(ctx, "Failed to Put: %v %v cause of %v \n", key, w, err)
+		log.Errorf(ctx, "Failed to Put: %v %v cause of %v \n", key, w, err)
 		return err
 	}
 	return c.JSON(http.StatusCreated, w)
