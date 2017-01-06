@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strconv"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -44,18 +43,12 @@ func refresh(c echo.Context) error {
 }
 
 func runWatcher(c echo.Context) error {
+	w := NewWatch()
 	req := c.Request()
 	ctx := appengine.NewContext(req)
-	log.Debugf(ctx, "/run\n")
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	log.Debugf(ctx, "/run id=%v\n", id)
-	key := datastore.NewKey(ctx, "Watches", "", id, nil)
-	log.Debugf(ctx, "/run id=%v key=%v\n", id, key)
-	w := Watch{}
-	if err := datastore.Get(ctx, key, &w); err != nil {
-		return err
-	}
-	log.Debugf(ctx, "Watcher is running for %v\n", w)
+	log.Debugf(ctx, "/watches/run %v\n", w)
+	key := datastore.NewKey(ctx, "Watches", w.WatchID, 0, nil)
+	log.Debugf(ctx, "/watches/run key=%v\n", key)
 	watcher := &Watcher{}
 	watcher.config = &w
 	watcher.watchKey = key
