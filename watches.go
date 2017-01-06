@@ -10,6 +10,7 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/taskqueue"
 )
 
 func init() {
@@ -20,7 +21,8 @@ func init() {
 
 	g.POST("", createWatch)
 	g.GET("", getWatches)
-	g.GET("/:id/refresh", runWatcher)
+	g.GET("/:id/refresh", refresh)
+	g.POST("/:id/run", runWatcher)
 }
 
 func createWatch(c echo.Context) error {
@@ -62,15 +64,29 @@ func getWatches(c echo.Context) error {
 	return c.JSON(http.StatusOK, watches)
 }
 
+func refresh(c echo.Context) error {
+	req := c.Request()
+	ctx := appengine.NewContext(req)
+	log.Debugf(ctx, "/refresh\n")
+	cron, ok := req.Header["X-Appengine-Cron"]
+	if !ok || cron[0] != "true" {
+		return c.JSON(http.StatusForbidden, map[string]string{ "message": "error" })
+	}
+	t := taskqueue.NewPOSTTask("/watches/" + c.Param("id")  + "/run", map[string][]string{  })
+	if _, err := taskqueue.Add(ctx, t, ""); err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, map[string]string{ "id": c.Param("id") })
+}
+
 func runWatcher(c echo.Context) error {
 	req := c.Request()
 	ctx := appengine.NewContext(req)
-	cron, ok := req.Header["X-Appengine-Cron"]
-	if !ok || cron[0] != "true" {
-		return c.JSON(http.StatusForbidden, req.Header)
-	}
+	log.Debugf(ctx, "/run\n")
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	log.Debugf(ctx, "/run id=%v\n", id)
 	key := datastore.NewKey(ctx, "Watches", "", id, nil)
+	log.Debugf(ctx, "/run id=%v key=%v\n", id, key)
 	w := Watch{}
 	if err := datastore.Get(ctx, key, &w); err != nil {
 		return err
@@ -78,6 +94,7 @@ func runWatcher(c echo.Context) error {
 	log.Debugf(ctx, "Watcher is running for %v\n", w)
 	watcher := &Watcher{}
 	watcher.config = &w
+	watcher.watchKey = key
 	watcher.process(ctx)
 	return c.JSON(http.StatusOK, w)
 }
