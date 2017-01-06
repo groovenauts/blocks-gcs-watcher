@@ -20,6 +20,7 @@ func init() {
 
 	g.POST("", createWatch)
 	g.GET("", getWatches)
+	g.GET("/:id/refresh", runWatcher)
 }
 
 func createWatch(c echo.Context) error {
@@ -59,4 +60,24 @@ func getWatches(c echo.Context) error {
 		watches = append(watches, v)
 	}
 	return c.JSON(http.StatusOK, watches)
+}
+
+func runWatcher(c echo.Context) error {
+	req := c.Request()
+	ctx := appengine.NewContext(req)
+	cron, ok := req.Header["X-Appengine-Cron"]
+	if !ok || cron[0] != "true" {
+		return c.JSON(http.StatusForbidden, req.Header)
+	}
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	key := datastore.NewKey(ctx, "Watches", "", id, nil)
+	w := Watch{}
+	if err := datastore.Get(ctx, key, &w); err != nil {
+		return err
+	}
+	log.Debugf(ctx, "Watcher is running for %v\n", w)
+	watcher := &Watcher{}
+	watcher.config = &w
+	watcher.process(ctx)
+	return c.JSON(http.StatusOK, w)
 }
