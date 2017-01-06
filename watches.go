@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -40,9 +41,22 @@ func createWatch(c echo.Context) error {
 func getWatches(c echo.Context) error {
 	ctx := appengine.NewContext(c.Request())
 	q := datastore.NewQuery("Watches")
-	var watches []Watch
-	if _, err := q.GetAll(ctx, &watches); err != nil {
-		return err
+	var watches []map[string]string
+	for t := q.Run(ctx); ; {
+		var w Watch
+		key, err := t.Next(&w)
+		if err == datastore.Done {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		v := make(map[string]string)
+		v["ID"] = strconv.FormatInt(key.IntID(), 10)
+		v["Project"] = w.ProjectID
+		v["Bucket"] = w.BucketName
+		v["Topic"] = w.TopicName
+		watches = append(watches, v)
 	}
 	return c.JSON(http.StatusOK, watches)
 }
