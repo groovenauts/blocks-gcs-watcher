@@ -68,10 +68,10 @@ func refresh(c echo.Context) error {
 	req := c.Request()
 	ctx := appengine.NewContext(req)
 	log.Debugf(ctx, "/refresh\n")
-	cron, ok := req.Header["X-Appengine-Cron"]
-	if !ok || cron[0] != "true" {
-		return c.JSON(http.StatusForbidden, map[string]string{ "message": "error" })
-	}
+	// cron, ok := req.Header["X-Appengine-Cron"]
+	// if !ok || cron[0] != "true" {
+	// 	return c.JSON(http.StatusForbidden, map[string]string{ "message": "error" })
+	// }
 	t := taskqueue.NewPOSTTask("/watches/" + c.Param("id")  + "/run", map[string][]string{  })
 	if _, err := taskqueue.Add(ctx, t, ""); err != nil {
 		return err
