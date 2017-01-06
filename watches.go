@@ -19,49 +19,13 @@ func init() {
 	g := e.Group("/watches")
 	g.Use(middleware.CORS())
 
-	g.POST("", createWatch)
-	g.GET("", getWatches)
-	g.GET("/:id/refresh", refresh)
-	g.POST("/:id/run", runWatcher)
+	g.GET("", showConfig)
+	g.GET("/refresh", refresh)
+	g.POST("/run", runWatcher)
 }
 
-func createWatch(c echo.Context) error {
-	req := c.Request()
-	ctx := appengine.NewContext(req)
-	w := Watch{}
-	if err := c.Bind(&w); err != nil {
-		log.Errorf(ctx, "Failed to Bind: %v %v cause of %v\n", c, w, err)
-		return err
-	}
-	key := datastore.NewIncompleteKey(ctx, "Watches", nil)
-	if _, err := datastore.Put(ctx, key, &w); err != nil {
-		log.Errorf(ctx, "Failed to Put: %v %v cause of %v \n", key, w, err)
-		return err
-	}
-	return c.JSON(http.StatusCreated, w)
-}
-
-func getWatches(c echo.Context) error {
-	ctx := appengine.NewContext(c.Request())
-	q := datastore.NewQuery("Watches")
-	var watches []map[string]string
-	for t := q.Run(ctx); ; {
-		var w Watch
-		key, err := t.Next(&w)
-		if err == datastore.Done {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		v := make(map[string]string)
-		v["ID"] = strconv.FormatInt(key.IntID(), 10)
-		v["Project"] = w.ProjectID
-		v["Bucket"] = w.BucketName
-		v["Topic"] = w.TopicName
-		watches = append(watches, v)
-	}
-	return c.JSON(http.StatusOK, watches)
+func showConfig(c echo.Context) error {
+	return c.JSON(http.StatusOK, NewWatch())
 }
 
 func refresh(c echo.Context) error {
@@ -72,11 +36,11 @@ func refresh(c echo.Context) error {
 	// if !ok || cron[0] != "true" {
 	// 	return c.JSON(http.StatusForbidden, map[string]string{ "message": "error" })
 	// }
-	t := taskqueue.NewPOSTTask("/watches/" + c.Param("id")  + "/run", map[string][]string{  })
+	t := taskqueue.NewPOSTTask("/watches/run", map[string][]string{  })
 	if _, err := taskqueue.Add(ctx, t, ""); err != nil {
 		return err
 	}
-	return c.JSON(http.StatusOK, map[string]string{ "id": c.Param("id") })
+	return c.JSON(http.StatusOK, map[string]string{ "message": "OK" })
 }
 
 func runWatcher(c echo.Context) error {
