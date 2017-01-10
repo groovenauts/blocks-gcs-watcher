@@ -83,7 +83,7 @@ func (w *Watcher) findFiles(ctx context.Context) map[string]time.Time {
 		if err != nil {
 			log.Errorf(ctx, "Failed to get Object from storage cause of %v\n", err)
 		}
-		log.Debugf(ctx, "Processing Object %v\n", o)
+		log.Debugf(ctx, "Object found %v\n", o)
 		url := "gs://" + o.Bucket + "/" + o.Name
 		result[url] = o.Updated
 	}
@@ -103,17 +103,17 @@ func (w *Watcher) calcDifferences(ctx context.Context, stored map[string]time.Ti
 	for url, foundUpdated := range found {
 		if storedUpdated, ok := stored[url]; ok {
 			if foundUpdated.After(storedUpdated) {
-				log.Debugf(ctx, "%v was updated at %v but now it's %v", url, storedUpdated, foundUpdated)
+				log.Debugf(ctx, "Updated %v %v => %v\n", url, storedUpdated, foundUpdated)
 				updated = append(updated, url)
 			}
 			delete(stored, url)
 		} else {
-			log.Debugf(ctx, "%v was inserted\n", url)
+			log.Debugf(ctx, "Inserted %v\n", url)
 			created = append(created, url)
 		}
 	}
 	for url, _ := range stored {
-		log.Debugf(ctx, "%v was deleted\n", url)
+		log.Debugf(ctx, "Deleted %v\n", url)
 		deleted = append(deleted, url)
 	}
 	return &differences {
