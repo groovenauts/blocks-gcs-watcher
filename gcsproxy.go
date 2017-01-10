@@ -20,11 +20,11 @@ func NewGCSProxyNotifier(ctx context.Context, c *Watch) GCSProxyNotifier {
 	return notifier
 }
 
-func (n *GCSProxyNotifier) Created(ctx context.Context, uf *UploadedFile) {
-	log.Debugf(ctx, "GCSProxyNotifier#Created uf: %v\n", uf)
+func (n *GCSProxyNotifier) Created(ctx context.Context, url string) {
+	log.Debugf(ctx, "GCSProxyNotifier#Created url: %v\n", url)
 
 	attrs := map[string]string {
-		"download_files": uf.Url,
+		"download_files": url,
 	}
 	log.Debugf(ctx, "GCSProxyNotifier#Created before Publish %v to %v\n", attrs, n.Topic)
 	msgIDs, err := n.Topic.Publish(ctx, &pubsub.Message{
@@ -33,16 +33,16 @@ func (n *GCSProxyNotifier) Created(ctx context.Context, uf *UploadedFile) {
 	})
 	log.Debugf(ctx, "GCSProxyNotifier#Created after Publish err: %v\n", err)
 	if err != nil {
-		log.Errorf(ctx, "Failed to publish of insertion of %v cause of %v\n", uf.Url, err)
+		log.Errorf(ctx, "Failed to publish of insertion of %v cause of %v\n", url, err)
 	} else {
 		log.Infof(ctx, "Message[ %v ] is published successfully\n", msgIDs)
 	}
 }
 
-func (n *GCSProxyNotifier) Updated(ctx context.Context, f *UploadedFile) {
+func (n *GCSProxyNotifier) Updated(ctx context.Context, url string) {
 	// Do nothing
 }
 
-func (n *GCSProxyNotifier) Deleted(ctx context.Context, f *UploadedFile) {
+func (n *GCSProxyNotifier) Deleted(ctx context.Context, url string) {
 	// Do nothing
 }

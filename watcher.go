@@ -46,14 +46,14 @@ func (w *Watcher) process(ctx context.Context) {
 			if o.Updated.After(updated) {
 				log.Debugf(ctx, "%v was updated at %v but now it's %v", url, updated, o.Updated)
 				w.storeUploadedFiles(ctx, url, o, func(uf *UploadedFile) {
-					w.notifier.Updated(ctx, uf)
+					w.notifier.Updated(ctx, uf.Url)
 				})
 			}
 			delete(storedFiles, url)
 		} else {
 			log.Debugf(ctx, "%v was inserted\n", url)
 			w.storeUploadedFiles(ctx, url, o, func(uf *UploadedFile) {
-				w.notifier.Created(ctx, uf)
+				w.notifier.Created(ctx, uf.Url)
 			})
 		}
 		log.Debugf(ctx, "Process completed Object %v\n", o)
@@ -65,7 +65,7 @@ func (w *Watcher) process(ctx context.Context) {
 			log.Debugf(ctx, "Failed to delete: %v \n", url)
 		} else {
 			uf := &UploadedFile{Url: url, Updated: updated}
-			w.notifier.Deleted(ctx, uf)
+			w.notifier.Deleted(ctx, uf.Url)
 		}
 	}
 }
