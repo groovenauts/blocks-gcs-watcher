@@ -50,7 +50,7 @@ func runWatcher(c echo.Context) error {
 	key := datastore.NewKey(ctx, "Watches", w.WatchID, 0, nil)
 	log.Debugf(ctx, "/watches/run key=%v\n", key)
 	watcher := &Watcher{}
-	watcher.config = &w
+	watcher.config = w
 	watcher.watchKey = key
 	watcher.process(ctx)
 	return c.JSON(http.StatusOK, w)

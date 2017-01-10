@@ -11,8 +11,8 @@ type Watch struct {
 	WatchID string
 }
 
-func NewWatch() Watch {
-	return Watch{
+func NewWatch(ctx context.Context) *Watch {
+	return &Watch{
 		ProjectID:  os.Getenv("PROJECT"),
 		BucketName: os.Getenv("BUCKET"),
 		TopicName: os.Getenv("TOPIC"),
