@@ -32,15 +32,7 @@ func (w *Watcher) process(ctx context.Context) {
 
 	diffs := w.calcDifferences(ctx, storedFiles, foundFiles)
 
-	for _, url := range diffs.created {
-		w.storeUploadedFiles(ctx, url, foundFiles[url], w.notifier.Created)
-	}
-	for _, url := range diffs.updated {
-		w.storeUploadedFiles(ctx, url, foundFiles[url], w.notifier.Updated)
-	}
-	for _, url := range diffs.deleted {
-		w.removeUploadedFiles(ctx, url, w.notifier.Deleted)
-	}
+	w.storeAndNotify(ctx, diffs, foundFiles)
 }
 
 func (w *Watcher) setup(ctx context.Context) {
@@ -120,6 +112,18 @@ func (w *Watcher) calcDifferences(ctx context.Context, stored map[string]time.Ti
 		created: created,
 		updated: updated,
 		deleted: deleted,
+	}
+}
+
+func (w *Watcher) storeAndNotify(ctx context.Context, diffs *differences, foundFiles map[string]time.Time) {
+	for _, url := range diffs.created {
+		w.storeUploadedFiles(ctx, url, foundFiles[url], w.notifier.Created)
+	}
+	for _, url := range diffs.updated {
+		w.storeUploadedFiles(ctx, url, foundFiles[url], w.notifier.Updated)
+	}
+	for _, url := range diffs.deleted {
+		w.removeUploadedFiles(ctx, url, w.notifier.Deleted)
 	}
 }
 
