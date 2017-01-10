@@ -14,6 +14,7 @@ type Watch struct {
 }
 
 func NewWatch(ctx context.Context) *Watch {
+	log.Infof(ctx, "/NewWatch\n")
 	return &Watch{
 		ProjectID:  os.Getenv("PROJECT"),
 		BucketName: os.Getenv("BUCKET"),
