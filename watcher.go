@@ -104,12 +104,12 @@ func (w *Watcher) calcDifferences(ctx context.Context, stored map[string]time.Ti
 		if storedUpdated, ok := stored[url]; ok {
 			if foundUpdated.After(storedUpdated) {
 				log.Debugf(ctx, "%v was updated at %v but now it's %v", url, storedUpdated, foundUpdated)
-				created = append(created, url)
+				updated = append(updated, url)
 			}
 			delete(stored, url)
 		} else {
 			log.Debugf(ctx, "%v was inserted\n", url)
-			updated = append(updated, url)
+			created = append(created, url)
 		}
 	}
 	for url, _ := range stored {
