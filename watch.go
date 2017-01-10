@@ -2,6 +2,8 @@ package main
 
 import (
 	"os"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/log"
 )
 
 type Watch struct {

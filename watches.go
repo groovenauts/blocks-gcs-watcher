@@ -24,7 +24,10 @@ func init() {
 }
 
 func showConfig(c echo.Context) error {
-	return c.JSON(http.StatusOK, NewWatch())
+	req := c.Request()
+	ctx := appengine.NewContext(req)
+	log.Infof(ctx, "/showConfig\n")
+	return c.JSON(http.StatusOK, NewWatch(ctx))
 }
 
 func refresh(c echo.Context) error {
@@ -43,9 +46,9 @@ func refresh(c echo.Context) error {
 }
 
 func runWatcher(c echo.Context) error {
-	w := NewWatch()
 	req := c.Request()
 	ctx := appengine.NewContext(req)
+	w := NewWatch(ctx)
 	log.Debugf(ctx, "/watches/run %v\n", w)
 	key := datastore.NewKey(ctx, "Watches", w.WatchID, 0, nil)
 	log.Debugf(ctx, "/watches/run key=%v\n", key)
