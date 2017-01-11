@@ -17,19 +17,22 @@ func init() {
 	g := e.Group("/watches")
 	g.Use(middleware.CORS())
 
-	g.GET("", showConfig)
-	g.GET("/refresh", refresh)
-	g.POST("/run", runWatcher)
+	h := &watcherHandler{}
+	g.GET("", h.ShowConfig)
+	g.GET("/refresh", h.Refresh)
+	g.POST("/run", h.RunWatcher)
 }
 
-func showConfig(c echo.Context) error {
+type watcherHandler struct{}
+
+func (h *watcherHandler) ShowConfig(c echo.Context) error {
 	req := c.Request()
 	ctx := appengine.NewContext(req)
 	log.Infof(ctx, "/showConfig\n")
 	return c.JSON(http.StatusOK, NewWatch(ctx))
 }
 
-func refresh(c echo.Context) error {
+func (h *watcherHandler) Refresh(c echo.Context) error {
 	req := c.Request()
 	ctx := appengine.NewContext(req)
 	log.Debugf(ctx, "/refresh\n")
@@ -44,7 +47,7 @@ func refresh(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
 }
 
-func runWatcher(c echo.Context) error {
+func (h *watcherHandler) RunWatcher(c echo.Context) error {
 	req := c.Request()
 	ctx := appengine.NewContext(req)
 	w := NewWatch(ctx)
