@@ -12,10 +12,9 @@ import (
 )
 
 type Watcher struct {
-	config        *Watch
-	storageClient *storage.Client
-	watchKey      *datastore.Key
-	notifier      Notifier
+	config   *Watch
+	watchKey *datastore.Key
+	notifier Notifier
 }
 
 type UploadedFile struct {
@@ -41,13 +40,6 @@ func (w *Watcher) setup(ctx context.Context, config *Watch) {
 	log.Debugf(ctx, "/watches/run key=%v\n", key)
 	w.watchKey = key
 
-	// Creates a storageClient
-	storageClient, err := storage.NewClient(ctx)
-	if err != nil {
-		log.Errorf(ctx, "Failed to create storageClient: %v\n", err)
-	}
-	w.storageClient = storageClient
-
 	n := NewGCSProxyNotifier(ctx, w.config)
 	w.notifier = &n
 }
@@ -69,8 +61,14 @@ func (w *Watcher) loadStoredFiles(ctx context.Context) map[string]time.Time {
 }
 
 func (w *Watcher) findFiles(ctx context.Context) map[string]time.Time {
+	// Creates a storageClient
+	storageClient, err := storage.NewClient(ctx)
+	if err != nil {
+		log.Errorf(ctx, "Failed to create storageClient: %v\n", err)
+	}
+
 	result := make(map[string]time.Time)
-	bucket := w.storageClient.Bucket(w.config.BucketName)
+	bucket := storageClient.Bucket(w.config.BucketName)
 	it := bucket.Objects(ctx, nil)
 	for {
 		o, err := it.Next()

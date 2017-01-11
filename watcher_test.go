@@ -73,3 +73,32 @@ func sameStrings(strs1, strs2 []string) bool {
 	}
 	return true
 }
+
+type dummyNotifier struct {
+	created []string
+	updated []string
+	deleted []string
+}
+
+func (n *dummyNotifier) Created(ctx context.Context, url string) {
+	n.created = append(n.created, url)
+}
+
+func (n *dummyNotifier) Updated(ctx context.Context, url string) {
+	n.created = append(n.updated, url)
+}
+
+func (n *dummyNotifier) Deleted(ctx context.Context, url string) {
+	n.created = append(n.deleted, url)
+}
+
+func TestWatcherStoreAndNotify(t *testing.T) {
+	notifier := dummyNotifier{
+		created: make([]string, 0, 1),
+		updated: make([]string, 0, 1),
+		deleted: make([]string, 0, 1),
+	}
+	w := &Watcher{}
+	w.notifier = &dummyNotifier
+
+}
