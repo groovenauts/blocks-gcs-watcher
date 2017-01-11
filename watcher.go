@@ -15,7 +15,7 @@ type Watcher struct {
 	config        *Watch
 	storageClient *storage.Client
 	watchKey      *datastore.Key
-	notifier      *GCSProxyNotifier
+	notifier      Notifier
 }
 
 type UploadedFile struct {
