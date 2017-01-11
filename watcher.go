@@ -23,9 +23,9 @@ type UploadedFile struct {
 	Updated time.Time `datastore:"updated"`
 }
 
-func (w *Watcher) process(ctx context.Context) {
-	log.Debugf(ctx, "Start processing: %v %v\n", w.watchKey, w.config)
-	w.setup(ctx)
+func (w *Watcher) process(ctx context.Context, config *Watch) {
+	log.Debugf(ctx, "Start processing: %v\n", config)
+	w.setup(ctx, config)
 
 	storedFiles := w.loadStoredFiles(ctx)
 	foundFiles := w.findFiles(ctx)
@@ -35,7 +35,12 @@ func (w *Watcher) process(ctx context.Context) {
 	w.storeAndNotify(ctx, diffs, foundFiles)
 }
 
-func (w *Watcher) setup(ctx context.Context) {
+func (w *Watcher) setup(ctx context.Context, config *Watch) {
+	w.config = config
+	key := datastore.NewKey(ctx, "Watches", w.config.WatchID, 0, nil)
+	log.Debugf(ctx, "/watches/run key=%v\n", key)
+	w.watchKey = key
+
 	// Creates a storageClient
 	storageClient, err := storage.NewClient(ctx)
 	if err != nil {

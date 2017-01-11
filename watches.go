@@ -7,7 +7,6 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/taskqueue"
 )
@@ -50,11 +49,7 @@ func runWatcher(c echo.Context) error {
 	ctx := appengine.NewContext(req)
 	w := NewWatch(ctx)
 	log.Debugf(ctx, "/watches/run %v\n", w)
-	key := datastore.NewKey(ctx, "Watches", w.WatchID, 0, nil)
-	log.Debugf(ctx, "/watches/run key=%v\n", key)
 	watcher := &Watcher{}
-	watcher.config = w
-	watcher.watchKey = key
-	watcher.process(ctx)
+	watcher.process(ctx, w)
 	return c.JSON(http.StatusOK, w)
 }
