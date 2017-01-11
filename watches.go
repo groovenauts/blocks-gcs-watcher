@@ -50,6 +50,7 @@ func runWatcher(c echo.Context) error {
 	w := NewWatch(ctx)
 	log.Debugf(ctx, "/watches/run %v\n", w)
 	watcher := &Watcher{}
-	watcher.process(ctx, w)
+	watcher.setup(ctx, w)
+	watcher.process(ctx)
 	return c.JSON(http.StatusOK, w)
 }
