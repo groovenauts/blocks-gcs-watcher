@@ -133,8 +133,9 @@ func (w *Watcher) storeUploadedFiles(ctx context.Context, url string, updated ti
 	k := datastore.NewKey(ctx, "UploadedFiles", url, 0, w.watchKey)
 	uf := &UploadedFile{Url: url, Updated: updated}
 	if _, err := datastore.Put(ctx, k, uf); err != nil {
-		log.Debugf(ctx, "Failed to put %v\n", uf)
+		log.Errorf(ctx, "Failed to put %v %v\n", k, uf)
 	} else {
+		log.Debugf(ctx, "Success to put: %v %v\n", k, uf)
 		callback(ctx, url)
 	}
 }
@@ -142,8 +143,9 @@ func (w *Watcher) storeUploadedFiles(ctx context.Context, url string, updated ti
 func (w *Watcher) removeUploadedFiles(ctx context.Context, url string, callback func(ctx context.Context, url string)) {
 	k := datastore.NewKey(ctx, "UploadedFiles", url, 0, w.watchKey)
 	if err := datastore.Delete(ctx, k); err != nil {
-		log.Debugf(ctx, "Failed to delete: %v \n", url)
+		log.Errorf(ctx, "Failed to delete: %v, %v \n", k, url)
 	} else {
+		log.Debugf(ctx, "Success to delete: %v, %v\n", k, url)
 		callback(ctx, url)
 	}
 }
