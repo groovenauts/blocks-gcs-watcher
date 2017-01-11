@@ -1,11 +1,14 @@
 package main
 
 import (
+	"sort"
 	"testing"
 	"time"
 
-	// "golang.org/x/net/context"
+	"golang.org/x/net/context"
 	"google.golang.org/appengine/aetest"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 )
 
 const layout = "2006-01-02 15:04:05 MST"
@@ -85,20 +88,105 @@ func (n *dummyNotifier) Created(ctx context.Context, url string) {
 }
 
 func (n *dummyNotifier) Updated(ctx context.Context, url string) {
-	n.created = append(n.updated, url)
+	n.updated = append(n.updated, url)
 }
 
 func (n *dummyNotifier) Deleted(ctx context.Context, url string) {
-	n.created = append(n.deleted, url)
+	n.deleted = append(n.deleted, url)
 }
 
 func TestWatcherStoreAndNotify(t *testing.T) {
-	notifier := dummyNotifier{
-		created: make([]string, 0, 1),
-		updated: make([]string, 0, 1),
-		deleted: make([]string, 0, 1),
+	// ctx := context.Background()
+	ctx, done, err := aetest.NewContext()
+	if err != nil {
+		t.Fatal(err)
 	}
-	w := &Watcher{}
-	w.notifier = &dummyNotifier
+	defer done()
 
+	w := &Watcher{}
+	w.watchKey = datastore.NewKey(ctx, "TestWatches", "TestWatchId", 0, nil)
+
+	keys := func(m map[string]time.Time) []string {
+		r := []string{}
+		for k, _ := range m {
+			r = append(r, k)
+		}
+		return r
+	}
+
+	fileBases := map[string]time.Time{
+		"gs://bucket1/path/to/foo.txt": parse("2017-01-11 12:00:00 JST"),
+		"gs://bucket1/path/to/bar.txt": parse("2017-01-11 15:00:00 JST"),
+		"gs://bucket1/path/to/baz.txt": parse("2017-01-11 14:00:00 JST"),
+	}
+	files := keys(fileBases)
+	sort.Strings(files)
+
+	check := func(diffs differences) {
+		notifier := dummyNotifier{
+			created: make([]string, 0, 1),
+			updated: make([]string, 0, 1),
+			deleted: make([]string, 0, 1),
+		}
+		w.notifier = &notifier
+		w.storeAndNotify(ctx, &diffs, fileBases)
+		if !sameStrings(diffs.created, notifier.created) {
+			t.Fatalf("Expected %v but was %v", diffs.created, notifier.created)
+		}
+		if !sameStrings(diffs.updated, notifier.updated) {
+			t.Fatalf("Expected %v but was %v", diffs.updated, notifier.updated)
+		}
+		if !sameStrings(diffs.deleted, notifier.deleted) {
+			t.Fatalf("Expected %v but was %v", diffs.deleted, notifier.deleted)
+		}
+	}
+
+	deleteAll(t, ctx, w.watchKey)
+
+	check(differences{created: files, updated: []string{}, deleted: []string{}})
+
+	updated1 := fetchUrls(t, ctx, w.watchKey)
+	if !sameStrings(files, updated1) {
+		t.Fatalf("Expected %v but was %v\n", files, updated1)
+	}
+
+	check(differences{created: []string{}, updated: files, deleted: []string{}})
+
+	updated2 := fetchUrls(t, ctx, w.watchKey)
+	if !sameStrings(files, updated2) {
+		t.Fatalf("Expected %v but was %v\n", files, updated2)
+	}
+
+	check(differences{created: []string{}, updated: []string{}, deleted: files})
+
+	updated3 := fetchUrls(t, ctx, w.watchKey)
+	if len(updated3) > 0 {
+		t.Fatalf("Expected no URL found but found %v\n", updated3)
+	}
+}
+
+func deleteAll(t *testing.T, ctx context.Context, key *datastore.Key) {
+	q := datastore.NewQuery("UploadedFiles").Ancestor(key).KeysOnly()
+	keys, err := q.GetAll(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = datastore.DeleteMulti(ctx, keys); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func fetchUrls(t *testing.T, ctx context.Context, key *datastore.Key) []string {
+	q := datastore.NewQuery("UploadedFiles").Ancestor(key)
+	var ufs []UploadedFile
+	if _, err := q.GetAll(ctx, &ufs); err != nil {
+		t.Fatal(err)
+	}
+	log.Infof(ctx, "Fetched Files: %v\n", ufs)
+	r := []string{}
+	for _, uf := range ufs {
+		r = append(r, uf.Url)
+	}
+	sort.Strings(r)
+	return r
 }
