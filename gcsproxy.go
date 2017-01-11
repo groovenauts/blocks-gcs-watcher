@@ -6,8 +6,12 @@ import (
 	"google.golang.org/appengine/log"
 )
 
+type Publisher interface {
+	Publish(ctx context.Context, msgs ...*pubsub.Message) ([]string, error)
+}
+
 type GCSProxyNotifier struct {
-	Topic *pubsub.Topic
+	Topic Publisher
 }
 
 func NewGCSProxyNotifier(ctx context.Context, c *Watch) GCSProxyNotifier {
