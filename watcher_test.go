@@ -46,6 +46,8 @@ func TestWatcherCalcDifferences(t *testing.T) {
 	check := func(patterns [][]string, diffs *differences) {
 		actuals := [][]string{diffs.created, diffs.updated, diffs.deleted}
 		for i, pattern := range patterns {
+			sort.Strings(pattern)
+			sort.Strings(actuals[i])
 			if !sameStrings(pattern, actuals[i]) {
 				t.Fatalf("Expected %v but was %v", pattern, actuals[i])
 			}
