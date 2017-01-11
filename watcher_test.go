@@ -54,6 +54,12 @@ func TestWatcherCalcDifferences(t *testing.T) {
 		{"gs://bucket1/path/to/bar.txt"},
 		{},
 	}, w.calcDifferences(ctx, files1, files2))
+
+	check([][]string{
+		{},
+		{},
+		{"gs://bucket1/path/to/bar.txt", "gs://bucket1/path/to/baz.txt"},
+	}, w.calcDifferences(ctx, files2, files3))
 }
 
 func sameStrings(strs1, strs2 []string) bool {
