@@ -24,16 +24,10 @@ func TestShowConfig(t *testing.T) {
 	os.Setenv("TOPIC", test_topic)
 	os.Setenv("WATCH_ID", test_watch_id)
 
-	inst, err := aetest.NewInstance(nil)
-	if err != nil {
-		t.Fatalf("Failed to create instance: %v", err)
-	}
+	inst, req := newInstanceAndReq(t, func(i aetest.Instance) (*http.Request, error) {
+		return i.NewRequest("GET", "/watches", nil)
+	})
 	defer inst.Close()
-
-	req, err := inst.NewRequest("GET", "/watches", nil)
-	if err != nil {
-		t.Fatalf("Failed to create req: %v", err)
-	}
 
 	// Setup
 	e := echo.New()
@@ -48,4 +42,18 @@ func TestShowConfig(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Equal(t, expected, rec.Body.String())
 	}
+}
+
+func newInstanceAndReq(t *testing.T, f func(aetest.Instance) (*http.Request, error)) (aetest.Instance, *http.Request) {
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	//defer inst.Close()
+
+	req, err := f(inst)
+	if err != nil {
+		t.Fatalf("Failed to create req: %v", err)
+	}
+	return inst, req
 }
