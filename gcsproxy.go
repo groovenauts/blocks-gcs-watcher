@@ -1,8 +1,8 @@
 package main
 
 import (
-	"golang.org/x/net/context"
 	"cloud.google.com/go/pubsub"
+	"golang.org/x/net/context"
 	"google.golang.org/appengine/log"
 )
 
@@ -16,19 +16,19 @@ func NewGCSProxyNotifier(ctx context.Context, c *Watch) GCSProxyNotifier {
 	if err != nil {
 		log.Errorf(ctx, "Failed to create pubsubClient for %s: %v\n", c.ProjectID, err)
 	}
-	notifier := GCSProxyNotifier{ pubsubClient.Topic(c.TopicName) }
+	notifier := GCSProxyNotifier{pubsubClient.Topic(c.TopicName)}
 	return notifier
 }
 
 func (n *GCSProxyNotifier) Created(ctx context.Context, url string) {
 	log.Debugf(ctx, "GCSProxyNotifier#Created url: %v\n", url)
 
-	attrs := map[string]string {
+	attrs := map[string]string{
 		"download_files": url,
 	}
 	log.Debugf(ctx, "GCSProxyNotifier#Created before Publish %v to %v\n", attrs, n.Topic)
 	msgIDs, err := n.Topic.Publish(ctx, &pubsub.Message{
-		Data: []byte(""),
+		Data:       []byte(""),
 		Attributes: attrs,
 	})
 	log.Debugf(ctx, "GCSProxyNotifier#Created after Publish err: %v\n", err)

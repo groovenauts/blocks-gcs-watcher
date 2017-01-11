@@ -1,8 +1,8 @@
 package main
 
 import (
-	"os"
 	"log"
+	"os"
 	"testing"
 
 	// "golang.org/x/net/context"

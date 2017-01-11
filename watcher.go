@@ -2,25 +2,25 @@ package main
 
 import (
 	"golang.org/x/net/context"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 	"time"
 
 	"cloud.google.com/go/storage"
 
-	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 	"google.golang.org/api/iterator"
 )
 
 type Watcher struct {
-	config *Watch
+	config        *Watch
 	storageClient *storage.Client
-	watchKey *datastore.Key
-	notifier *GCSProxyNotifier
+	watchKey      *datastore.Key
+	notifier      *GCSProxyNotifier
 }
 
 type UploadedFile struct {
-	Url string `datastore:"url"`
-  Updated time.Time  `datastore:"updated"`
+	Url     string    `datastore:"url"`
+	Updated time.Time `datastore:"updated"`
 }
 
 func (w *Watcher) process(ctx context.Context) {
@@ -108,7 +108,7 @@ func (w *Watcher) calcDifferences(ctx context.Context, stored map[string]time.Ti
 		log.Debugf(ctx, "Deleted %v\n", url)
 		deleted = append(deleted, url)
 	}
-	return &differences {
+	return &differences{
 		created: created,
 		updated: updated,
 		deleted: deleted,

@@ -7,8 +7,8 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"google.golang.org/appengine"
-	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/taskqueue"
 )
 
@@ -38,11 +38,11 @@ func refresh(c echo.Context) error {
 	// if !ok || cron[0] != "true" {
 	// 	return c.JSON(http.StatusForbidden, map[string]string{ "message": "error" })
 	// }
-	t := taskqueue.NewPOSTTask("/watches/run", map[string][]string{  })
+	t := taskqueue.NewPOSTTask("/watches/run", map[string][]string{})
 	if _, err := taskqueue.Add(ctx, t, ""); err != nil {
 		return err
 	}
-	return c.JSON(http.StatusOK, map[string]string{ "message": "OK" })
+	return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
 }
 
 func runWatcher(c echo.Context) error {

@@ -1,16 +1,16 @@
 package main
 
 import (
-	"os"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/log"
+	"os"
 )
 
 type Watch struct {
-	ProjectID string
+	ProjectID  string
 	BucketName string
-	TopicName string
-	WatchID string
+	TopicName  string
+	WatchID    string
 }
 
 func NewWatch(ctx context.Context) *Watch {
@@ -18,7 +18,7 @@ func NewWatch(ctx context.Context) *Watch {
 	return &Watch{
 		ProjectID:  os.Getenv("PROJECT"),
 		BucketName: os.Getenv("BUCKET"),
-		TopicName: os.Getenv("TOPIC"),
-		WatchID: os.Getenv("WATCH_ID"),
+		TopicName:  os.Getenv("TOPIC"),
+		WatchID:    os.Getenv("WATCH_ID"),
 	}
 }
