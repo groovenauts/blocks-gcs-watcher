@@ -1,4 +1,4 @@
-package: .
+package: github.com/groovenauts/blocks-gcs-watcher
 import:
 - package: cloud.google.com/go
   subpackages:
