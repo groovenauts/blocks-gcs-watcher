@@ -1,0 +1,4 @@
+cron:
+# - description: "Watch every 1 minute"
+#   url: /watches/refresh
+#   schedule: every 1 minutes

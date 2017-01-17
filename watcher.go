@@ -1,0 +1,151 @@
+package main
+
+import (
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
+	"time"
+
+	"cloud.google.com/go/storage"
+
+	"google.golang.org/api/iterator"
+)
+
+type Watcher struct {
+	config   *Watch
+	watchKey *datastore.Key
+	notifier Notifier
+}
+
+type UploadedFile struct {
+	Url     string    `datastore:"url"`
+	Updated time.Time `datastore:"updated"`
+}
+
+func (w *Watcher) setup(ctx context.Context, config *Watch) {
+	w.config = config
+	key := datastore.NewKey(ctx, "Watches", w.config.WatchID, 0, nil)
+	log.Debugf(ctx, "/watches/run key=%v\n", key)
+	w.watchKey = key
+
+	n := NewGCSProxyNotifier(ctx, w.config)
+	w.notifier = &n
+}
+
+func (w *Watcher) process(ctx context.Context) {
+	log.Debugf(ctx, "Start processing: %v\n", w.config)
+
+	storedFiles := w.loadStoredFiles(ctx)
+	foundFiles := w.findFiles(ctx)
+
+	diffs := w.calcDifferences(ctx, storedFiles, foundFiles)
+
+	w.storeAndNotify(ctx, diffs, foundFiles)
+}
+
+func (w *Watcher) loadStoredFiles(ctx context.Context) map[string]time.Time {
+	q := datastore.NewQuery("UploadedFiles").Ancestor(w.watchKey)
+	var res []UploadedFile
+	_, err := q.GetAll(ctx, &res)
+	if err != nil {
+		log.Errorf(ctx, "Failed to get all uploaded files: %v\n", err)
+	}
+
+	storedFiles := make(map[string]time.Time)
+	for _, v := range res {
+		log.Debugf(ctx, "Stored File: %v\n", v.Url)
+		storedFiles[v.Url] = v.Updated
+	}
+	return storedFiles
+}
+
+func (w *Watcher) findFiles(ctx context.Context) map[string]time.Time {
+	// Creates a storageClient
+	storageClient, err := storage.NewClient(ctx)
+	if err != nil {
+		log.Errorf(ctx, "Failed to create storageClient: %v\n", err)
+	}
+
+	result := make(map[string]time.Time)
+	bucket := storageClient.Bucket(w.config.BucketName)
+	it := bucket.Objects(ctx, nil)
+	for {
+		o, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			log.Errorf(ctx, "Failed to get Object from storage cause of %v\n", err)
+		}
+		log.Debugf(ctx, "Object found %v\n", o)
+		url := "gs://" + o.Bucket + "/" + o.Name
+		result[url] = o.Updated
+	}
+	return result
+}
+
+type differences struct {
+	created []string
+	updated []string
+	deleted []string
+}
+
+func (w *Watcher) calcDifferences(ctx context.Context, stored map[string]time.Time, found map[string]time.Time) *differences {
+	created := make([]string, 0, 1)
+	updated := make([]string, 0, 1)
+	deleted := make([]string, 0, 1)
+	for url, foundUpdated := range found {
+		if storedUpdated, ok := stored[url]; ok {
+			if foundUpdated.After(storedUpdated) {
+				log.Debugf(ctx, "Updated %v %v => %v\n", url, storedUpdated, foundUpdated)
+				updated = append(updated, url)
+			}
+			delete(stored, url)
+		} else {
+			log.Debugf(ctx, "Inserted %v\n", url)
+			created = append(created, url)
+		}
+	}
+	for url, _ := range stored {
+		log.Debugf(ctx, "Deleted %v\n", url)
+		deleted = append(deleted, url)
+	}
+	return &differences{
+		created: created,
+		updated: updated,
+		deleted: deleted,
+	}
+}
+
+func (w *Watcher) storeAndNotify(ctx context.Context, diffs *differences, foundFiles map[string]time.Time) {
+	for _, url := range diffs.created {
+		w.storeUploadedFiles(ctx, url, foundFiles[url], w.notifier.Created)
+	}
+	for _, url := range diffs.updated {
+		w.storeUploadedFiles(ctx, url, foundFiles[url], w.notifier.Updated)
+	}
+	for _, url := range diffs.deleted {
+		w.removeUploadedFiles(ctx, url, w.notifier.Deleted)
+	}
+}
+
+func (w *Watcher) storeUploadedFiles(ctx context.Context, url string, updated time.Time, callback func(ctx context.Context, url string)) {
+	k := datastore.NewKey(ctx, "UploadedFiles", url, 0, w.watchKey)
+	uf := &UploadedFile{Url: url, Updated: updated}
+	if _, err := datastore.Put(ctx, k, uf); err != nil {
+		log.Errorf(ctx, "Failed to put %v %v\n", k, uf)
+	} else {
+		log.Debugf(ctx, "Success to put: %v %v\n", k, uf)
+		callback(ctx, url)
+	}
+}
+
+func (w *Watcher) removeUploadedFiles(ctx context.Context, url string, callback func(ctx context.Context, url string)) {
+	k := datastore.NewKey(ctx, "UploadedFiles", url, 0, w.watchKey)
+	if err := datastore.Delete(ctx, k); err != nil {
+		log.Errorf(ctx, "Failed to delete: %v, %v \n", k, url)
+	} else {
+		log.Debugf(ctx, "Success to delete: %v, %v\n", k, url)
+		callback(ctx, url)
+	}
+}
