@@ -1,5 +1,7 @@
 # blocks-gcs-watcher
 
+[![Build Status](https://secure.travis-ci.org/groovenauts/blocks-gcs-watcher.png)](https://travis-ci.org/groovenauts/blocks-gcs-watcher)
+
 ## Overview
 
 `blocks-gcs-watcher` watches your bucket. If files are uploaded,
