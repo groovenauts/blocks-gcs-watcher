@@ -1,6 +1,8 @@
 package: github.com/groovenauts/blocks-gcs-watcher
 import:
 - package: github.com/labstack/echo
+  subpackages:
+  - middleware
 - package: golang.org/x/net
   subpackages:
   - context
