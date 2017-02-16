@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/labstack/echo"
 	// "github.com/labstack/echo/middleware"
@@ -27,10 +28,17 @@ type watcherHandler struct {
 }
 
 func (h *watcherHandler) get(c echo.Context) error {
+	verification := os.Getenv("GOOGLE_SITE_VERIFICATION")
 	req := c.Request()
 	ctx := appengine.NewContext(req)
 	log.Infof(ctx, "GET request to notification page.\n")
-	return c.JSON(http.StatusOK, req.Header)
+	res := `<html><head>` +
+        `<meta name="google-site-verification" content="` + verification + `" />` +
+				`<title>blocks-gcs-watcher</title>` +
+				`</head>` +
+				`<body>` +
+	      `</body></html>`
+	return c.String(http.StatusOK, res)
 }
 
 func (h *watcherHandler) post(c echo.Context) error {
