@@ -8,12 +8,6 @@ handlers:
 - url: /.*
   script: _go_app
 
-# env_variables:
-#   PROJECT: 'DUMMY_PROJECT'
-#   BUCKET: 'TEST_BUCKET'
-#   TOPIC: 'TEST_TOPIC'
-#   WATCH_ID: 'DUMMY_WATCH_ID'
-
 nobuild_files:
 - vendor/
 

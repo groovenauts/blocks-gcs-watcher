@@ -1,20 +1,9 @@
 package: github.com/groovenauts/blocks-gcs-watcher
 import:
 - package: github.com/labstack/echo
-  subpackages:
-  - middleware
 - package: golang.org/x/net
   subpackages:
   - context
 - package: google.golang.org/appengine
   subpackages:
-  - datastore
   - log
-  - taskqueue
-- package: cloud.google.com/go
-  subpackages:
-  - pubsub
-testImport:
-- package: github.com/stretchr/testify
-  subpackages:
-  - assert

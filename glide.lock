@@ -1,5 +1,5 @@
-hash: 5867ee2af66570918a9d92ba4f897bb2a95d3faca656d600619315ba13f8a097
-updated: 2017-02-16T20:03:05.971784335+09:00
+hash: 1b35a1e35728132ca3a7d6bb9f11b69995223f73d20fb08447ef8db3b3e8530b
+updated: 2017-02-16T20:25:29.061396014+09:00
 imports:
 - name: cloud.google.com/go
   version: 0b87d14d90086b53a97dfbd66f3000f7f112b494
@@ -24,6 +24,8 @@ imports:
   version: da06d194a00e19ce00d9011a13931c3f6f6887c7
 - name: github.com/labstack/echo
   version: 394f533510cc577dd4e136b56de3802a4f88f7b4
+  subpackages:
+  - middleware
 - name: github.com/labstack/gommon
   version: f72d3c883f8ea180da8f085dd320804c41332ad1
   subpackages:
@@ -77,6 +79,7 @@ imports:
   version: 2e4a801b39fc199db615bfca7d0b9f8cd9580599
   subpackages:
   - aetest
+  - datastore
   - internal
   - internal/app_identity
   - internal/base
@@ -89,6 +92,7 @@ imports:
   - internal/user
   - log
   - socket
+  - taskqueue
   - urlfetch
   - user
 - name: google.golang.org/genproto
@@ -111,4 +115,8 @@ imports:
   - stats
   - tap
   - transport
-testImports: []
+testImports:
+- name: github.com/stretchr/testify
+  version: 4d4bfba8f1d1027c4fdbe371823030df51419987
+  subpackages:
+  - assert
