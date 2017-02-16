@@ -1,72 +1,55 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	// "github.com/labstack/echo/middleware"
 
-	"golang.org/x/net/context"
+	// "golang.org/x/net/context"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
-	"google.golang.org/appengine/taskqueue"
+	// "google.golang.org/appengine/taskqueue"
 )
 
 func init() {
 	// hook into the echo instance to create an endpoint group
 	// and add specific middleware to it plus handlers
-	g := e.Group("/watches")
-	g.Use(middleware.CORS())
-
-	h := &watcherHandler{&Watcher{}}
-	g.GET("", h.ShowConfig)
-	g.GET("/refresh", h.Refresh)
-	g.POST("/run", h.RunWatcher)
-}
-
-type Processor interface {
-	setup(ctx context.Context, w *Watch)
-	process(ctx context.Context)
+	h := &watcherHandler{}
+	e.GET("/", h.get)
+	e.POST("/", h.post)
 }
 
 type watcherHandler struct {
-	processor Processor
 }
 
-func (h *watcherHandler) ShowConfig(c echo.Context) error {
+func (h *watcherHandler) get(c echo.Context) error {
 	req := c.Request()
 	ctx := appengine.NewContext(req)
-	log.Infof(ctx, "/showConfig\n")
-	return c.JSON(http.StatusOK, NewWatch(ctx))
+	log.Infof(ctx, "GET request to notification page.\n")
+	return c.JSON(http.StatusOK, req.Header)
 }
 
-func (h *watcherHandler) Refresh(c echo.Context) error {
+func (h *watcherHandler) post(c echo.Context) error {
 	req := c.Request()
 	ctx := appengine.NewContext(req)
-	log.Debugf(ctx, "/refresh\n")
-	// cron, ok := req.Header["X-Appengine-Cron"]
-	// if !ok || cron[0] != "true" {
-	// 	return c.JSON(http.StatusForbidden, map[string]string{ "message": "error" })
-	// }
-	t := taskqueue.NewPOSTTask("/watches/run", map[string][]string{})
-	if _, err := taskqueue.Add(ctx, t, ""); err != nil {
-		return err
+	log.Infof(ctx, "Processing OCN POST request\nHeader: %v\n", req.Header)
+	resource_state := req.Header.Get("X-Goog-Resource-State")
+	if resource_state == "" {
+		log.Infof(ctx, "Unkown message received.\n")
+	} else if resource_state == "sync" {
+		log.Infof(ctx, "Sync message received.\n")
+	} else {
+		body, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Error to read body")
+    }
+		var obj interface{}
+		json.Unmarshal(body, &obj)
+		log.Infof(ctx, "%v\n", obj)
 	}
-	return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
-}
-
-func (h *watcherHandler) RunWatcher(c echo.Context) error {
-	req := c.Request()
-	ctx := appengine.NewContext(req)
-	w := NewWatch(ctx)
-	log.Debugf(ctx, "/watches/run %v\n", w)
-	defer h.setWatcher()
-	h.processor.setup(ctx, w)
-	h.processor.process(ctx)
-	return c.JSON(http.StatusOK, w)
-}
-
-func (h *watcherHandler) setWatcher() {
-	h.processor = &Watcher{}
+	return c.String(http.StatusOK, "OK")
 }

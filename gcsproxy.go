@@ -14,13 +14,13 @@ type GCSProxyNotifier struct {
 	Topic Publisher
 }
 
-func NewGCSProxyNotifier(ctx context.Context, c *Watch) GCSProxyNotifier {
+func NewGCSProxyNotifier(ctx context.Context, projectID, topicName string) GCSProxyNotifier {
 	// Creates a pubsubClient
-	pubsubClient, err := pubsub.NewClient(ctx, c.ProjectID)
+	pubsubClient, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
-		log.Errorf(ctx, "Failed to create pubsubClient for %s: %v\n", c.ProjectID, err)
+		log.Errorf(ctx, "Failed to create pubsubClient for %s: %v\n", projectID, err)
 	}
-	notifier := GCSProxyNotifier{pubsubClient.Topic(c.TopicName)}
+	notifier := GCSProxyNotifier{pubsubClient.Topic(topicName)}
 	return notifier
 }
 
