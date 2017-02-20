@@ -19,15 +19,15 @@ import (
 func init() {
 	// hook into the echo instance to create an endpoint group
 	// and add specific middleware to it plus handlers
-	h := &watcherHandler{}
+	h := &handler{}
 	e.GET("/", h.get)
 	e.POST("/", h.post)
 }
 
-type watcherHandler struct {
+type handler struct {
 }
 
-func (h *watcherHandler) get(c echo.Context) error {
+func (h *handler) get(c echo.Context) error {
 	req := c.Request()
 	ctx := appengine.NewContext(req)
 	log.Infof(ctx, "GET request to notification page.\n")
@@ -41,7 +41,7 @@ func (h *watcherHandler) get(c echo.Context) error {
 	return c.HTML(http.StatusOK, res)
 }
 
-func (h *watcherHandler) post(c echo.Context) error {
+func (h *handler) post(c echo.Context) error {
 	req := c.Request()
 	ctx := appengine.NewContext(req)
 	log.Infof(ctx, "Processing OCN POST request\nHeader: %v\n", req.Header)
