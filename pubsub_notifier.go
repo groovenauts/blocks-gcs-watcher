@@ -9,8 +9,25 @@ import (
 	"google.golang.org/appengine/log"
 )
 
-type PubsubNotifier struct {
-	service *pubsub.Service
+type (
+	Publisher interface {
+		Publish(topic string, msg *pubsub.PubsubMessage) (*pubsub.PublishResponse, error)
+	}
+
+	pubsubPublisher struct {
+		topicsService *pubsub.ProjectsTopicsService
+	}
+
+	PubsubNotifier struct {
+		publisher Publisher
+	}
+)
+
+func (pp *pubsubPublisher) Publish(topic string, msg *pubsub.PubsubMessage) (*pubsub.PublishResponse, error) {
+	req := &pubsub.PublishRequest{
+		Messages: []*pubsub.PubsubMessage{msg},
+	}
+	return pp.topicsService.Publish(topic, req).Do()
 }
 
 func NewPubsubNotifier(ctx context.Context) (Notifier, error) {
@@ -28,7 +45,7 @@ func NewPubsubNotifier(ctx context.Context) (Notifier, error) {
 		return nil, err
 	}
 
-	notifier := PubsubNotifier{service}
+	notifier := PubsubNotifier{ &pubsubPublisher{service.Projects.Topics} }
 	return &notifier, nil
 }
 
@@ -42,11 +59,8 @@ func (n *PubsubNotifier) Updated(ctx context.Context, url string) error {
 			"download_files": url,
 		},
 	}
-	req := &pubsub.PublishRequest{
-		Messages: []*pubsub.PubsubMessage{msg},
-	}
 	log.Debugf(ctx, "PubsubNotifier#Updated before Publish %v to %v\n", msg, topic)
-	if _, err := n.service.Projects.Topics.Publish(topic, req).Do(); err != nil {
+	if _, err := n.publisher.Publish(topic, msg); err != nil {
 		log.Errorf(ctx, "Failed to publish the update message of %v cause of %v\n", url, err)
 		return err
 	}
