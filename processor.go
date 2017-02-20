@@ -40,8 +40,14 @@ func (dp *DefaultProcessor) execute(ctx context.Context, notifier Notifier, stat
 	}
 	log.Infof(ctx, "%v\n", obj)
 
-	bucket := obj["bucket"].(string)
-	name := obj["name"].(string)
+	bucket, ok := obj["bucket"].(string)
+	if !ok {
+		return fmt.Errorf("bucket must be a string but it was an %T (%v)", obj["bucket"], obj["bucket"])
+	}
+	name, ok := obj["name"].(string)
+	if !ok {
+		return fmt.Errorf("name must be a string but it was an %T (%v)", obj["name"], obj["name"])
+	}
 	url := "gs://" + bucket + "/" + name
 
 	switch state {

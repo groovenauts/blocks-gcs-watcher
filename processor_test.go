@@ -72,15 +72,46 @@ func TestProcessorExecute(t *testing.T) {
 	assert.NoError(t, err)
 
 	reader := bytes.NewReader(byteData)
-	processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
+	err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
+	assert.NoError(t, err)
 	assert.Equal(t, 1, len(notifier.updatedUrls))
 	assert.Equal(t, 0, len(notifier.deletedUrls))
 	assert.Equal(t, "gs://"+bucket1+"/"+path1, notifier.updatedUrls[0])
 
 	notifier.updatedUrls = []string{}
 	reader = bytes.NewReader(byteData)
-	processor.execute(ctx, notifier, "not_exists", ioutil.NopCloser(reader))
+	err = processor.execute(ctx, notifier, "not_exists", ioutil.NopCloser(reader))
+	assert.NoError(t, err)
 	assert.Equal(t, 0, len(notifier.updatedUrls))
 	assert.Equal(t, 1, len(notifier.deletedUrls))
 	assert.Equal(t, "gs://"+bucket1+"/"+path1, notifier.deletedUrls[0])
+
+	notifier.deletedUrls = []string{}
+	notifier.updatedUrls = []string{}
+
+	invalidData1 := map[string]interface{}{
+		"bucket": 1,
+		"name": path1,
+	}
+	byteData, err = json.Marshal(invalidData1)
+	assert.NoError(t, err)
+	reader = bytes.NewReader(byteData)
+	err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
+	assert.Error(t, err)
+	assert.Regexp(t, "bucket must be a string", err.Error())
+	assert.Equal(t, 0, len(notifier.updatedUrls))
+	assert.Equal(t, 0, len(notifier.deletedUrls))
+
+	invalidData2 := map[string]interface{}{
+		"bucket": bucket1,
+		"name": 2,
+	}
+	byteData, err = json.Marshal(invalidData2)
+	assert.NoError(t, err)
+	reader = bytes.NewReader(byteData)
+	err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
+	assert.Error(t, err)
+	assert.Regexp(t, "name must be a string", err.Error())
+	assert.Equal(t, 0, len(notifier.updatedUrls))
+	assert.Equal(t, 0, len(notifier.deletedUrls))
 }
