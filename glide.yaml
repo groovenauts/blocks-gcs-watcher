@@ -6,6 +6,14 @@ import:
 - package: golang.org/x/net
   subpackages:
   - context
+  - context/ctxhttp
+- package: golang.org/x/oauth2
+  subpackages:
+  - google
 - package: google.golang.org/appengine
   subpackages:
   - log
+- package: google.golang.org/api
+  subpackages:
+  - pubsub
+  - pubsub/v1
