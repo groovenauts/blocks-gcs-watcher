@@ -16,7 +16,7 @@ type (
 		Run(ctx context.Context, state string, body io.ReadCloser) error
 	}
 
-	DefaultProcessor struct {}
+	DefaultProcessor struct{}
 )
 
 func (dp *DefaultProcessor) Run(ctx context.Context, state string, body io.ReadCloser) error {

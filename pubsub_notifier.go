@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	pubsub "google.golang.org/api/pubsub/v1"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
+	pubsub "google.golang.org/api/pubsub/v1"
 	"google.golang.org/appengine/log"
 )
 
@@ -45,7 +45,7 @@ func NewPubsubNotifier(ctx context.Context) (Notifier, error) {
 		return nil, err
 	}
 
-	notifier := PubsubNotifier{ &pubsubPublisher{service.Projects.Topics} }
+	notifier := PubsubNotifier{&pubsubPublisher{service.Projects.Topics}}
 	return &notifier, nil
 }
 

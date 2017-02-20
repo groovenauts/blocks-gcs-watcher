@@ -33,11 +33,11 @@ func (h *handler) get(c echo.Context) error {
 	log.Infof(ctx, "GET request to notification page.\n")
 	verification := os.Getenv("GOOGLE_SITE_VERIFICATION")
 	res := `<html><head>` +
-        `<meta name="google-site-verification" content="` + verification + `" />` +
-				`<title>blocks-gcs-watcher</title>` +
-				`</head>` +
-				`<body>` +
-	      `</body></html>`
+		`<meta name="google-site-verification" content="` + verification + `" />` +
+		`<title>blocks-gcs-watcher</title>` +
+		`</head>` +
+		`<body>` +
+		`</body></html>`
 	return c.HTML(http.StatusOK, res)
 }
 
