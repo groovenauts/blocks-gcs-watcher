@@ -1,8 +1,7 @@
 package main
 
 import (
-	"encoding/json"
-	"io/ioutil"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -19,12 +18,13 @@ import (
 func init() {
 	// hook into the echo instance to create an endpoint group
 	// and add specific middleware to it plus handlers
-	h := &handler{}
+	h := &handler{&DefaultProcessor{}}
 	e.GET("/", h.get)
 	e.POST("/", h.post)
 }
 
 type handler struct {
+	processor Processor
 }
 
 func (h *handler) get(c echo.Context) error {
@@ -51,13 +51,11 @@ func (h *handler) post(c echo.Context) error {
 	} else if resource_state == "sync" {
 		log.Infof(ctx, "Sync message received.\n")
 	} else {
-		body, err := ioutil.ReadAll(req.Body)
+		st := req.Header.Get("X-Goog-Resource-State")
+		err := h.processor.Run(ctx, st, req.Body)
 		if err != nil {
-			c.String(http.StatusInternalServerError, "Error to read body")
-    }
-		var obj interface{}
-		json.Unmarshal(body, &obj)
-		log.Infof(ctx, "%v\n", obj)
+			return c.String(http.StatusBadRequest, fmt.Sprintf("%v", err))
+		}
 	}
 	return c.String(http.StatusOK, "OK")
 }
