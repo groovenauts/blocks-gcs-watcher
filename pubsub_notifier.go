@@ -34,7 +34,7 @@ func NewPubsubNotifier(ctx context.Context) (Notifier, error) {
 	// https://github.com/google/google-api-go-client#application-default-credentials-example
 	client, err := google.DefaultClient(ctx, pubsub.PubsubScope)
 	if err != nil {
-		log.Errorf(ctx, "Failed to create DrfaultClient\n")
+		log.Errorf(ctx, "Failed to create DefaultClient\n")
 		return nil, err
 	}
 
