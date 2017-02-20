@@ -54,7 +54,9 @@ func (h *handler) post(c echo.Context) error {
 		st := req.Header.Get("X-Goog-Resource-State")
 		err := h.processor.Run(ctx, st, req.Body)
 		if err != nil {
-			return c.String(http.StatusBadRequest, fmt.Sprintf("%v", err))
+			msg := fmt.Sprintf("%v", err)
+			log.Errorf(ctx, "Returning 500 error: %v", msg)
+			return c.String(http.StatusInternalServerError, msg)
 		}
 	}
 	return c.String(http.StatusOK, "OK")
