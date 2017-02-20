@@ -47,7 +47,7 @@ func (h *handler) post(c echo.Context) error {
 	log.Infof(ctx, "Processing OCN POST request\nHeader: %v\n", req.Header)
 	resource_state := req.Header.Get("X-Goog-Resource-State")
 	if resource_state == "" {
-		log.Infof(ctx, "Unkown message received.\n")
+		log.Infof(ctx, "Unknown message received.\n")
 	} else if resource_state == "sync" {
 		log.Infof(ctx, "Sync message received.\n")
 	} else {
