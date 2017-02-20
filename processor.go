@@ -16,12 +16,18 @@ type (
 		Run(ctx context.Context, state string, body io.ReadCloser) error
 	}
 
-	DefaultProcessor struct {
-		notifier Notifier
-	}
+	DefaultProcessor struct {}
 )
 
 func (dp *DefaultProcessor) Run(ctx context.Context, state string, body io.ReadCloser) error {
+	notifier, err := NewPubsubNotifier(ctx)
+	if err != nil {
+		return err
+	}
+	return dp.execute(ctx, notifier, state, body)
+}
+
+func (dp *DefaultProcessor) execute(ctx context.Context, notifier Notifier, state string, body io.ReadCloser) error {
 	bytes, err := ioutil.ReadAll(body)
 	if err != nil {
 		return err
@@ -38,19 +44,11 @@ func (dp *DefaultProcessor) Run(ctx context.Context, state string, body io.ReadC
 	name := obj["name"].(string)
 	url := "gs://" + bucket + "/" + name
 
-	if dp.notifier == nil {
-		notifier, err := NewPubsubNotifier(ctx)
-		if err != nil {
-			return err
-		}
-		dp.notifier = notifier
-	}
-
 	switch state {
 	case "exists":
-		err = dp.notifier.Updated(ctx, url)
+		err = notifier.Updated(ctx, url)
 	case "not_exists":
-		err = dp.notifier.Deleted(ctx, url)
+		err = notifier.Deleted(ctx, url)
 	default:
 		err = fmt.Errorf("Unknown state %v is given", state)
 	}
