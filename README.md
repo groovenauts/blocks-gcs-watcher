@@ -36,9 +36,6 @@ go tool cover -html=coverage.out
 
 ```
 $ dev_appserver.py \
-  --env_var WATCH_ID=<STRING ID> \
-  --env_var BUCKET=<YOUR_GCS_BUCKET> \
-  --env_var PROJECT=<YOUR_PUBSUB_PROJECT> \
   --env_var TOPIC=<YOUR_PUBSUB_TOPIC> \
   ./app.yaml
 ```
@@ -49,9 +46,8 @@ $ dev_appserver.py \
 ```
 $ appcfg.py \
   -A <YOUR_GCP_PROJECT> \
-  -E GOOGLE_SITE_VERIFICATION:<GOOGLE_SITE_VERIFICATION> \
-  -E PROJECT:<YOUR_PUBSUB_PROJECT> \
-  -E TOPIC:<YOUR_PUBSUB_TOPIC> \
+  -E GOOGLE_SITE_VERIFICATION:<YOUR_GOOGLE_SITE_VERIFICATION> \
+  -E PUBSUB_TOPIC:<YOUR_PUBSUB_TOPIC> \
   -V $(cat VERSION) \
   update .
 ```
@@ -59,5 +55,5 @@ $ appcfg.py \
 If you want to set it active, run the following command
 
 ```
-$ gcloud app services set-traffic default --splits=$(cat VERSION)=1
+$ gcloud app services set-traffic gcs-watcher --splits=$(cat VERSION)=1
 ```
