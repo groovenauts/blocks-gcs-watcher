@@ -1,8 +1,6 @@
-# application: blocks-gcs-watcher # defined when you create your app using google dev console
-# module: default                 # see https://cloud.google.com/appengine/docs/go/
-# version: alpha                  # you can run multiple versions of an app and A/B test
-runtime: go                     # see https://cloud.google.com/appengine/docs/go/
-api_version: go1                # used when appengine supports different go versions
+service: gcs-watcher     # see https://cloud.google.com/appengine/docs/go/
+runtime: go              # see https://cloud.google.com/appengine/docs/go/
+api_version: go1         # used when appengine supports different go versions
 
 # default_expiration: "1d"        # for CDN serving of static files (use url versioning if long!)
 
@@ -10,8 +8,8 @@ handlers:
 - url: /.*
   script: _go_app
 
-# env_variables:
-#   PROJECT: 'DUMMY_PROJECT'
-#   BUCKET: 'TEST_BUCKET'
-#   TOPIC: 'TEST_TOPIC'
-#   WATCH_ID: 'DUMMY_WATCH_ID'
+nobuild_files:
+- vendor/
+
+skip_files:
+- vendor/
