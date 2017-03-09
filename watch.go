@@ -8,10 +8,10 @@ import (
 
 type (
 	Watch struct {
-		id string // from key
 		Seq int
 		Pattern string
 		Topic string
+		ID string      `form:"-",datastore:"-"` // from key
 	}
 
 	Watches []*Watch
@@ -42,7 +42,7 @@ func (s *WatchService) AllWith(q *datastore.Query) (Watches, error) {
 		if err != nil {
 			return nil, err
 		}
-		obj.id = key.Encode()
+		obj.ID = key.Encode()
 		res = append(res, &obj)
 	}
 	return res, nil
@@ -56,7 +56,7 @@ func (s *WatchService) Find(id string) (*Watch, error) {
 		return nil, err
 	}
 	log.Debugf(s.ctx, "WatchService.Find(%v) key: %v\n", id, key)
-	obj := Watch{id: id}
+	obj := Watch{ID: id}
 	err = datastore.Get(s.ctx, key, &obj)
 	switch {
 	case err == datastore.ErrNoSuchEntity:
