@@ -37,8 +37,8 @@ func init() {
 	g := e.Group("/admin/watches")
 	g.GET("", h.wrap(h.index))
 	g.POST("", h.wrap(h.create))
-	// g.GET("/:id/edit", h.withId(h.edit))
-	// g.POST("/:id/update", h.withId(h.update))
+	g.GET("/:id/edit", h.withId(h.edit))
+	g.POST("/:id/update", h.withId(h.update))
 	g.GET("/:id/delete", h.withId(h.delete))
 }
 
@@ -107,6 +107,50 @@ func (h *adminHandler) delete(c echo.Context, w *Watch) error {
 	h.flash.set(c, "notice", fmt.Sprintf("The Watch is deleted successfully. id: %v", w.ID))
 	return c.Redirect(http.StatusFound, "/admin/watches")
 }
+
+
+type EditRes struct {
+	Flash *Flash
+	Watches Watches
+	Target string
+}
+
+func (h *adminHandler) edit(c echo.Context, w *Watch) error {
+	ctx := c.Get("aecontext").(context.Context)
+	log.Debugf(ctx, "edit1: %v\n", w)
+	service := &WatchService{ctx}
+	watches, err := service.All()
+	log.Debugf(ctx, "edit2: %v\n", w)
+	if err != nil {
+		log.Errorf(ctx, "edit: %v, [%T]%v\n", w, err, err)
+		return err
+	}
+	log.Debugf(ctx, "edit3: %v\n", w)
+	r := EditRes{
+		Flash: c.Get("flash").(*Flash),
+		Watches: watches,
+		Target: w.ID,
+	}
+	log.Debugf(ctx, "edit4: %q\n", r.Target)
+	return c.Render(http.StatusOK, "edit", &r)
+}
+
+func (h *adminHandler) update(c echo.Context, w *Watch) error {
+	ctx := c.Get("aecontext").(context.Context)
+	c.Bind(w)
+	service := &WatchService{ctx}
+	log.Debugf(ctx, "update: %v\n", w)
+	err := service.Update(w)
+	if err != nil {
+		h.flash.set(c, "alert", err.Error())
+	} else {
+		h.flash.set(c, "notice", "Watch is created successfully")
+	}
+	return c.Redirect(http.StatusFound, "/admin/watches")
+}
+
+
+
 
 func (h *adminHandler) wrap(f func(c echo.Context) error) func(c echo.Context) error {
 	return h.flash.with(h.withAEContext(f))

@@ -1,0 +1,50 @@
+{{define "edit"}}
+
+{{if .Flash.Alert}}
+<p>ALERT: {{.Flash.Alert}}</p>
+{{end}}
+
+{{if .Flash.Notice}}
+<p>Notice: {{.Flash.Notice}}</p>
+{{end}}
+
+<form action="/admin/watches/{{.Target}}/update" method="POST">
+
+  <table>
+    <thead>
+      <th>ID</th>
+      <th>Seq</th>
+      <th>Pattern</th>
+      <th>Topic</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </thead>
+    <tbody>
+    {{ $target := .Target }}
+    {{range .Watches}}
+      {{ if eq $target .ID }}
+    <tr>
+      <td>{{.ID}}</td>
+      <td><input type="number" name="seq" value="{{.Seq}}" size="4"/></td>
+      <td><input type="text" name="pattern" value="{{.Pattern}}"/></td>
+      <td><input type="text" name="topic" value="{{.Topic}}"/></td>
+      <td><input type="submit" value="Update"/></td>
+      <td></td>
+    </tr>
+      {{else}}
+    <tr>
+      <td>{{.ID}}</td>
+      <td>{{.Seq}}</td>
+      <td>{{.Pattern}} </td>
+      <td>{{.Topic}} </td>
+      <td><a href="/admin/watches/{{.ID}}/edit">Edit</a></td>
+      <td><a href="/admin/watches/{{.ID}}/delete">Delete</a></td>
+    </tr>
+      {{end}}
+    {{end}}
+    </tbody>
+  </table>
+
+</form>
+{{end}}

@@ -72,7 +72,7 @@ func (s *WatchService) Find(id string) (*Watch, error) {
 		return nil, err
 	}
 	log.Debugf(s.ctx, "WatchService.Find(%v) key: %v\n", id, key)
-	obj := Watch{ID: id}
+	obj := Watch{}
 	err = datastore.Get(s.ctx, key, &obj)
 	switch {
 	case err == datastore.ErrNoSuchEntity:
@@ -81,6 +81,7 @@ func (s *WatchService) Find(id string) (*Watch, error) {
 		log.Errorf(s.ctx, "WatchService.Find(%v) [%T]%v\n", id, err, err)
 		return nil, err
 	}
+	obj.ID = id
 	return &obj, nil
 }
 
@@ -92,6 +93,19 @@ func (s *WatchService) Create(w *Watch) error {
 		return err
 	}
 	w.ID = res.Encode()
+	return nil
+}
+
+func (s *WatchService) Update(w *Watch) error {
+	key, err := datastore.DecodeKey(w.ID)
+	if err != nil {
+		return err
+	}
+	_, err = datastore.Put(s.ctx, key, w)
+	if err != nil {
+		log.Errorf(s.ctx, "WatchService.Update(%v) [%T]%v\n", w, err, err)
+		return err
+	}
 	return nil
 }
 
