@@ -20,11 +20,11 @@ type (
 	}
 )
 
-func (dn *dummyNotifier) Updated(ctx context.Context, url string) error {
+func (dn *dummyNotifier) Updated(ctx context.Context, topic, url string) error {
 	dn.updatedUrls = append(dn.updatedUrls, url)
 	return nil
 }
-func (dn *dummyNotifier) Deleted(ctx context.Context, url string) error {
+func (dn *dummyNotifier) Deleted(ctx context.Context, topic, url string) error {
 	dn.deletedUrls = append(dn.deletedUrls, url)
 	return nil
 }

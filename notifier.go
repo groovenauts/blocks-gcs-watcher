@@ -5,6 +5,6 @@ import (
 )
 
 type Notifier interface {
-	Updated(ctx context.Context, url string) error
-	Deleted(ctx context.Context, url string) error
+	Updated(ctx context.Context, topic, url string) error
+	Deleted(ctx context.Context, topic, url string) error
 }

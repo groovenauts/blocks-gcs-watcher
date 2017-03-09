@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 
 	"golang.org/x/net/context"
 
@@ -49,12 +50,13 @@ func (dp *DefaultProcessor) execute(ctx context.Context, notifier Notifier, stat
 		return fmt.Errorf("name must be a string but it was an %T (%v)", obj["name"], obj["name"])
 	}
 	url := "gs://" + bucket + "/" + name
+	topic := os.Getenv("PUBSUB_TOPIC")
 
 	switch state {
 	case "exists":
-		err = notifier.Updated(ctx, url)
+		err = notifier.Updated(ctx, topic, url)
 	case "not_exists":
-		err = notifier.Deleted(ctx, url)
+		err = notifier.Deleted(ctx, topic, url)
 	default:
 		err = fmt.Errorf("Unknown state %v is given", state)
 	}
