@@ -8,10 +8,10 @@ import (
 
 type (
 	Watch struct {
-		Seq int
-		Pattern string
-		Topic string
 		ID string      `form:"-",datastore:"-"` // from key
+		Seq int        `form:"seq"`
+		Pattern string `form:"pattern"`
+		Topic string   `form:"topic"`
 	}
 
 	Watches []*Watch
@@ -31,7 +31,9 @@ func (s *WatchService) All() (Watches, error) {
 }
 
 func (s *WatchService) AllWith(q *datastore.Query) (Watches, error) {
+	log.Debugf(s.ctx, "AllWith #0\n")
 	iter := q.Run(s.ctx)
+	log.Debugf(s.ctx, "AllWith #1\n")
 	var res = Watches{}
 	for {
 		obj := Watch{}
@@ -40,10 +42,15 @@ func (s *WatchService) AllWith(q *datastore.Query) (Watches, error) {
 			break
 		}
 		if err != nil {
+			log.Errorf(s.ctx, "AllWith err: %v\n", err)
 			return nil, err
 		}
 		obj.ID = key.Encode()
 		res = append(res, &obj)
+	}
+	log.Debugf(s.ctx, "AllWith => %v\n", res)
+	for i, w := range res {
+		log.Debugf(s.ctx, "AllWith %v: %v, %v, %v\n", i, w.Seq, w.Pattern, w.Topic)
 	}
 	return res, nil
 }
@@ -66,4 +73,15 @@ func (s *WatchService) Find(id string) (*Watch, error) {
 		return nil, err
 	}
 	return &obj, nil
+}
+
+func (s *WatchService) Create(w *Watch) error {
+	key := datastore.NewIncompleteKey(s.ctx, WATCH_KIND, nil)
+	res, err := datastore.Put(s.ctx, key, w)
+	if err != nil {
+		log.Errorf(s.ctx, "WatchService.Create(%v) [%T]%v\n", w, err, err)
+		return err
+	}
+	w.ID = res.Encode()
+	return nil
 }

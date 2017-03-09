@@ -27,20 +27,17 @@
       <td>{{.Seq}}</td>
       <td>{{.Pattern}} </td>
       <td>{{.Topic}} </td>
-      <td><a href="/admin/auths/{{.ID}}/edit">Edit</a></td>
-      <td>
-        <form action="/admin/auths/{{.ID}}/delete" method="POST">
-          <input type="submit" value="Delete"/>
-        </form>
-      </td>
+      <td><a href="/admin/watches/{{.ID}}/edit">Edit</a></td>
+      <td><a href="/admin/watches/{{.ID}}/delete">Delete</a></td>
     </tr>
     {{end}}
     <tr>
       <td></td>
-      <td><input type="number" name="Seq" value="{{.NewSeq}}" size="4"/></td>
-      <td><input type="text" name="Pattern" value=""/></td>
-      <td><input type="text" name="Topic" value=""/></td>
+      <td><input type="number" name="seq" value="{{.NewSeq}}" size="4"/></td>
+      <td><input type="text" name="pattern" value=""/></td>
+      <td><input type="text" name="topic" value=""/></td>
       <td><input type="submit" value="Create"/></td>
+      <td></td>
     </tr>
     </tbody>
   </table>

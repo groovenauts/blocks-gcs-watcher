@@ -35,7 +35,7 @@ func init() {
 
 	g := e.Group("/admin/watches")
 	g.GET("", h.flash.with(h.index))
-	// g.POST("", h.flash.with(h.create))
+	g.POST("", h.flash.with(h.create))
 	// g.GET("/:id/edit", h.withId(h.edit))
 	// g.POST("/:id/update", h.withId(h.update))
 	// g.POST("/:id/delete", h.withId(h.destroy))
@@ -76,5 +76,21 @@ func (h *adminHandler) index(c echo.Context) error {
 		Watches: watches,
 		NewSeq: maxSeq + 1,
 	}
+	log.Debugf(ctx, "indexPage r: %v\n", r)
 	return c.Render(http.StatusOK, "index", &r)
+}
+
+func (h *adminHandler) create(c echo.Context) error {
+	ctx := appengine.NewContext(c.Request())
+	watch := Watch{}
+	c.Bind(&watch)
+	log.Debugf(ctx, "Binded Watch: %v\n", watch)
+	service := &WatchService{ctx}
+	err := service.Create(&watch)
+	if err != nil {
+		h.flash.set(c, "alert", err.Error())
+	} else {
+		h.flash.set(c, "notice", "Watch is created successfully")
+	}
+	return c.Redirect(http.StatusFound, "/admin/watches")
 }
