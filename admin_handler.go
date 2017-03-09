@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"io"
 	"net/http"
@@ -9,7 +10,7 @@ import (
 	"github.com/labstack/echo"
 	// "github.com/labstack/echo/middleware"
 
-	// "golang.org/x/net/context"
+	"golang.org/x/net/context"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
@@ -34,11 +35,11 @@ func init() {
 	e.Renderer = t
 
 	g := e.Group("/admin/watches")
-	g.GET("", h.flash.with(h.index))
-	g.POST("", h.flash.with(h.create))
+	g.GET("", h.wrap(h.index))
+	g.POST("", h.wrap(h.create))
 	// g.GET("/:id/edit", h.withId(h.edit))
 	// g.POST("/:id/update", h.withId(h.update))
-	// g.POST("/:id/delete", h.withId(h.destroy))
+	g.GET("/:id/delete", h.withId(h.delete))
 }
 
 type Template struct {
@@ -56,7 +57,7 @@ type IndexRes struct {
 }
 
 func (h *adminHandler) index(c echo.Context) error {
-	ctx := appengine.NewContext(c.Request())
+	ctx := c.Get("aecontext").(context.Context)
 	service := &WatchService{ctx}
 	log.Debugf(ctx, "index\n")
 	watches, err := service.All()
@@ -81,7 +82,7 @@ func (h *adminHandler) index(c echo.Context) error {
 }
 
 func (h *adminHandler) create(c echo.Context) error {
-	ctx := appengine.NewContext(c.Request())
+	ctx := c.Get("aecontext").(context.Context)
 	watch := Watch{}
 	c.Bind(&watch)
 	log.Debugf(ctx, "Binded Watch: %v\n", watch)
@@ -93,4 +94,47 @@ func (h *adminHandler) create(c echo.Context) error {
 		h.flash.set(c, "notice", "Watch is created successfully")
 	}
 	return c.Redirect(http.StatusFound, "/admin/watches")
+}
+
+func (h *adminHandler) delete(c echo.Context, w *Watch) error {
+	ctx := c.Get("aecontext").(context.Context)
+	service := &WatchService{ctx}
+	err := service.Delete(w.ID)
+	if err != nil {
+		h.flash.set(c, "alert", fmt.Sprintf("Failed to destroy watch. id: %v error: ", w.ID, err))
+		return c.Redirect(http.StatusFound, "/admin/auths")
+	}
+	h.flash.set(c, "notice", fmt.Sprintf("The Watch is deleted successfully. id: %v", w.ID))
+	return c.Redirect(http.StatusFound, "/admin/watches")
+}
+
+func (h *adminHandler) wrap(f func(c echo.Context) error) func(c echo.Context) error {
+	return h.flash.with(h.withAEContext(f))
+}
+
+func (h *adminHandler) withAEContext(f func(c echo.Context) error) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		ctx := appengine.NewContext(c.Request())
+		c.Set("aecontext", ctx)
+		return f(c)
+	}
+}
+
+func (h *adminHandler) withId(f func (c echo.Context, w *Watch) error) func (c echo.Context) error {
+	return h.wrap(func(c echo.Context) error{
+		ctx := c.Get("aecontext").(context.Context)
+		service := &WatchService{ctx}
+		w, err := service.Find(c.Param("id"))
+		if err != nil {
+			switch err.(type) {
+			case *EntityNotFound:
+				h.flash.set(c, "alert", fmt.Sprintf("Watch not found for id: %v", c.Param("id")))
+				return c.Redirect(http.StatusFound, "/admin/watches")
+			default:
+				h.flash.set(c, "alert", fmt.Sprintf("Failed to find watch for id: %v error: ", c.Param("id"), err))
+				return c.Redirect(http.StatusFound, "/admin/watches")
+			}
+		}
+		return f(c, w)
+	})
 }

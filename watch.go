@@ -7,6 +7,15 @@ import (
 )
 
 type (
+	EntityNotFound struct {
+		cause error
+	}
+)
+func (e *EntityNotFound) Error() string {
+	return e.cause.Error()
+}
+
+type (
 	Watch struct {
 		ID string      `form:"-",datastore:"-"` // from key
 		Seq int        `form:"seq"`
@@ -67,7 +76,7 @@ func (s *WatchService) Find(id string) (*Watch, error) {
 	err = datastore.Get(s.ctx, key, &obj)
 	switch {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, err
+		return nil, &EntityNotFound{err}
 	case err != nil:
 		log.Errorf(s.ctx, "WatchService.Find(%v) [%T]%v\n", id, err, err)
 		return nil, err
@@ -83,5 +92,17 @@ func (s *WatchService) Create(w *Watch) error {
 		return err
 	}
 	w.ID = res.Encode()
+	return nil
+}
+
+func (s *WatchService) Delete(id string) error {
+	key, err := datastore.DecodeKey(id)
+	if err != nil {
+		return err
+	}
+	err = datastore.Delete(s.ctx, key)
+	if err != nil {
+		return err
+	}
 	return nil
 }
