@@ -1,0 +1,49 @@
+{{define "index"}}
+
+{{if .Flash.Alert}}
+<p>ALERT: {{.Flash.Alert}}</p>
+{{end}}
+
+{{if .Flash.Notice}}
+<p>Notice: {{.Flash.Notice}}</p>
+{{end}}
+
+<form action="/admin/watches" method="POST">
+
+  <table>
+    <thead>
+      <th>ID</th>
+      <th>Seq</th>
+      <th>Pattern</th>
+      <th>Topic</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </thead>
+    <tbody>
+    {{range .Watches}}
+    <tr>
+      <td>{{.id}} </td>
+      <td>{{.Seq}}</td>
+      <td>{{.Pattern}} </td>
+      <td>{{.Topic}} </td>
+      <td><a href="/admin/auths/{{.ID}}/edit">Edit</a></td>
+      <td>
+        <form action="/admin/auths/{{.ID}}/delete" method="POST">
+          <input type="submit" value="Delete"/>
+        </form>
+      </td>
+    </tr>
+    {{end}}
+    <tr>
+      <td></td>
+      <td><input type="number" name="Seq" value="{{.NewSeq}}" size="4"/></td>
+      <td><input type="text" name="Pattern" value=""/></td>
+      <td><input type="text" name="Topic" value=""/></td>
+      <td><input type="submit" value="Create"/></td>
+    </tr>
+    </tbody>
+  </table>
+
+</form>
+{{end}}
