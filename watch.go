@@ -1,6 +1,8 @@
 package main
 
 import (
+	"sort"
+
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -30,6 +32,19 @@ type (
 	}
 )
 
+func (w Watches) Len() int {
+	return len(w)
+}
+
+func (w Watches) Less(i, j int) bool {
+	return w[i].Seq < w[j].Seq
+}
+
+func (w Watches) Swap(i, j int) {
+    w[i], w[j] = w[j], w[i]
+}
+
+
 const (
 	WATCH_KIND = "Watches"
 )
@@ -57,6 +72,7 @@ func (s *WatchService) AllWith(q *datastore.Query) (Watches, error) {
 		obj.ID = key.Encode()
 		res = append(res, &obj)
 	}
+	sort.Sort(res)
 	log.Debugf(s.ctx, "AllWith => %v\n", res)
 	for i, w := range res {
 		log.Debugf(s.ctx, "AllWith %v: %v, %v, %v\n", i, w.Seq, w.Pattern, w.Topic)
