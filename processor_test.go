@@ -53,6 +53,32 @@ func (dn *dummyNotifier) Deleted(ctx context.Context, topic, url string) error {
 	return nil
 }
 
+func BuildData(bucket, path string) map[string]interface{} {
+	return map[string]interface{}{
+		"selfLink":       "https://www.googleapis.com/storage/v1/b/" + bucket + "/o/dir1%2Ftestfile-20170220-1038.yml",
+		"generation":     "1487554916603322",
+		"metageneration": 1,
+		"contentType":    "binary/octet-stream",
+		"storageClass":   "NEARLINE",
+		"kind":           "storage#object",
+		"id":             bucket + "/" + path + "/1487554916603322",
+		"bucket":         bucket,
+		"updated":        "2017-02-20T01:41:56.589Z",
+		"owner": map[string]string{
+			"entity":   "user-00b4903a97fb634e7bd281721e3fa9acb6fa30bfa0a060f59e28449208eb3669",
+			"entityId": "00b4903a97fb634e7bd281721e3fa9acb6fa30bfa0a060f59e28449208eb3669",
+		},
+		"etag":        "CLqrjfPFndICEAE=",
+		"timeCreated": "2017-02-20T01:41:56.589Z",
+		"crc32c":      "xgUuHw==",
+		"name":        path,
+		"timeStorageClassUpdated": "2017-02-20T01:41:56.589Z",
+		"size":      1660,
+		"md5Hash":   "t+IZeQ/RK0l4d1qVv3fpUA==",
+		"mediaLink": "https://www.googleapis.com/download/storage/v1/b/" + bucket + "/o/dir1%2Ftestfile-20170220-1038.yml?generation=1487554916603322&alt=media",
+	}
+}
+
 func TestProcessorExecute(t *testing.T) {
 	ctx, done, err := aetest.NewContext()
 	if err != nil {
@@ -94,29 +120,7 @@ func TestProcessorExecute(t *testing.T) {
 		}
 	})
 
-	data := map[string]interface{}{
-		"selfLink":       "https://www.googleapis.com/storage/v1/b/" + bucket1 + "/o/dir1%2Ftestfile-20170220-1038.yml",
-		"generation":     "1487554916603322",
-		"metageneration": 1,
-		"contentType":    "binary/octet-stream",
-		"storageClass":   "NEARLINE",
-		"kind":           "storage#object",
-		"id":             bucket1 + "/" + path1 + "/1487554916603322",
-		"bucket":         bucket1,
-		"updated":        "2017-02-20T01:41:56.589Z",
-		"owner": map[string]string{
-			"entity":   "user-00b4903a97fb634e7bd281721e3fa9acb6fa30bfa0a060f59e28449208eb3669",
-			"entityId": "00b4903a97fb634e7bd281721e3fa9acb6fa30bfa0a060f59e28449208eb3669",
-		},
-		"etag":        "CLqrjfPFndICEAE=",
-		"timeCreated": "2017-02-20T01:41:56.589Z",
-		"crc32c":      "xgUuHw==",
-		"name":        path1,
-		"timeStorageClassUpdated": "2017-02-20T01:41:56.589Z",
-		"size":      1660,
-		"md5Hash":   "t+IZeQ/RK0l4d1qVv3fpUA==",
-		"mediaLink": "https://www.googleapis.com/download/storage/v1/b/" + bucket1 + "/o/dir1%2Ftestfile-20170220-1038.yml?generation=1487554916603322&alt=media",
-	}
+	data := BuildData(bucket1, path1)
 	byteData, err := json.Marshal(data)
 	assert.NoError(t, err)
 
