@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"math"
+	"regexp"
 	"testing"
 	"time"
 
@@ -92,16 +93,20 @@ func TestProcessorExecute(t *testing.T) {
 	}
 	processor := &DefaultProcessor{}
 
+	ext1 := ".dat"
 	bucket1 := "test-bucket01"
+	bucket2 := "test-bucket02"
 	dir1 := "dir1"
 	dir2 := "dir2"
 	dir3 := "dir3"
 	path1 := dir1 + "/testfile-20170220-1038.yml"
 	path2 := dir2 + "/testfile-20170220-1038.yml"
 	path3 := dir3 + "/testfile-20170220-1038.yml"
+	path4 := dir2 + "/testfile-20170220-1038" + ext1
 
 	topic1 := "projects/dummy-proj-999/topics/topic1"
 	topic2 := "projects/dummy-proj-999/topics/topic2"
+	topic3 := "projects/dummy-proj-999/topics/topic3"
 
 	ClearDatastore(t, ctx, WATCH_KIND)
 	service := &WatchService{ctx}
@@ -113,6 +118,11 @@ func TestProcessorExecute(t *testing.T) {
 		},
 		&Watch{
 			Seq: 2,
+			Pattern: regexp.QuoteMeta(ext1) + `\z`,
+			Topic: topic3,
+		},
+		&Watch{
+			Seq: 3,
 			Pattern: `\Ags://` + bucket1 + `/` + dir2,
 			Topic: topic2,
 		},
@@ -137,57 +147,38 @@ func TestProcessorExecute(t *testing.T) {
 		}
 	})
 
-	// Basic pattern - dir1
-	data := BuildData(bucket1, path1)
-	byteData, err := json.Marshal(data)
-	assert.NoError(t, err)
-
-	reader := bytes.NewReader(byteData)
-	err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
-	if assert.NoError(t, err) {
-		assert.Equal(t, 0, len(notifier.deleted))
-		if assert.Equal(t, 1, len(notifier.updated)) {
-			assert.Equal(t, "gs://"+bucket1+"/"+path1, notifier.updated[0].url)
-			assert.Equal(t, topic1, notifier.updated[0].topic)
-		}
+	type Pattern struct {
+		bucket string
+		path string
+		topics []string
 	}
 
-	notifier.updated = []TopicUrl{}
-	reader = bytes.NewReader(byteData)
-	err = processor.execute(ctx, notifier, "not_exists", ioutil.NopCloser(reader))
-	if assert.NoError(t, err) {
-		assert.Equal(t, 0, len(notifier.updated))
-		if assert.Equal(t, 1, len(notifier.deleted)) {
-			assert.Equal(t, "gs://"+bucket1+"/"+path1, notifier.deleted[0].url)
-			assert.Equal(t, topic1, notifier.deleted[0].topic)
-		}
+	patterns := []Pattern{
+		{bucket1, path1, []string{topic1}},
+		{bucket1, path2, []string{topic2}},
+		{bucket1, path3, []string{}},
+		{bucket1, path4, []string{topic3}},
+		{bucket2, path4, []string{topic3}},
 	}
 
-	// Basic pattern - dir2
-	notifier.deleted = []TopicUrl{}
-	notifier.updated = []TopicUrl{}
-	byteData, err = json.Marshal(BuildData(bucket1, path2))
-	assert.NoError(t, err)
-	reader = bytes.NewReader(byteData)
-	err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
-	if assert.NoError(t, err) {
-		assert.Equal(t, 0, len(notifier.deleted))
-		if assert.Equal(t, 1, len(notifier.updated)) {
-			assert.Equal(t, "gs://"+bucket1+"/"+path2, notifier.updated[0].url)
-			assert.Equal(t, topic2, notifier.updated[0].topic)
+	for _, pattern := range patterns {
+		notifier.deleted = []TopicUrl{}
+		notifier.updated = []TopicUrl{}
+		byteData, err := json.Marshal(BuildData(pattern.bucket, pattern.path))
+		assert.NoError(t, err)
+		reader := bytes.NewReader(byteData)
+		err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
+		if assert.NoError(t, err) {
+			assert.Equal(t, 0, len(notifier.deleted))
+			if assert.Equal(t, len(pattern.topics), len(notifier.updated)) {
+				if len(pattern.topics) > 0 {
+					assert.Equal(t, "gs://"+pattern.bucket+"/"+pattern.path, notifier.updated[0].url)
+					for _, topic := range pattern.topics {
+						assert.Equal(t, topic, notifier.updated[0].topic)
+					}
+				}
+			}
 		}
-	}
-
-	// Valid but not hit
-	notifier.deleted = []TopicUrl{}
-	notifier.updated = []TopicUrl{}
-	byteData, err = json.Marshal(BuildData(bucket1, path3))
-	assert.NoError(t, err)
-	reader = bytes.NewReader(byteData)
-	err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
-	if assert.NoError(t, err) {
-		assert.Equal(t, 0, len(notifier.updated))
-		assert.Equal(t, 0, len(notifier.deleted))
 	}
 
 	// Invalid data
@@ -198,9 +189,9 @@ func TestProcessorExecute(t *testing.T) {
 		"bucket": 1,
 		"name": path1,
 	}
-	byteData, err = json.Marshal(invalidData1)
+	byteData, err := json.Marshal(invalidData1)
 	assert.NoError(t, err)
-	reader = bytes.NewReader(byteData)
+	reader := bytes.NewReader(byteData)
 	err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
 	assert.Error(t, err)
 	assert.Regexp(t, "bucket must be a string", err.Error())
