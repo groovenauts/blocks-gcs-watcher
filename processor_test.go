@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"math"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -13,19 +15,41 @@ import (
 	"google.golang.org/appengine/aetest"
 )
 
+// retry for datastore's eventual consistency
+func retryWith(max int, impl func() func()) {
+	for i := 0; i < max+1; i++ {
+		f := impl()
+		if f == nil {
+			return
+		}
+		if i == max {
+			f()
+		} else {
+			// Exponential backoff
+			d := time.Duration(math.Pow(2.0, float64(i)) * 5.0)
+			time.Sleep(d * time.Millisecond)
+		}
+	}
+}
+
 type (
+	TopicUrl struct {
+		topic string
+		url   string
+	}
+
 	dummyNotifier struct {
-		updatedUrls []string
-		deletedUrls []string
+		updated []TopicUrl
+		deleted []TopicUrl
 	}
 )
 
 func (dn *dummyNotifier) Updated(ctx context.Context, topic, url string) error {
-	dn.updatedUrls = append(dn.updatedUrls, url)
+	dn.updated = append(dn.updated, TopicUrl{topic, url})
 	return nil
 }
 func (dn *dummyNotifier) Deleted(ctx context.Context, topic, url string) error {
-	dn.deletedUrls = append(dn.deletedUrls, url)
+	dn.deleted = append(dn.deleted, TopicUrl{topic, url})
 	return nil
 }
 
@@ -37,13 +61,38 @@ func TestProcessorExecute(t *testing.T) {
 	defer done()
 
 	notifier := &dummyNotifier{
-		updatedUrls: []string{},
-		deletedUrls: []string{},
+		updated: []TopicUrl{},
+		deleted: []TopicUrl{},
 	}
 	processor := &DefaultProcessor{}
 
 	bucket1 := "test-bucket01"
 	path1 := "dir1/testfile-20170220-1038.yml"
+
+	ClearDatastore(t, ctx, WATCH_KIND)
+	service := &WatchService{ctx}
+	watch := &Watch{
+		Seq: 1,
+		Pattern: `\Ags://` + bucket1 + `/`,
+		Topic: "projects/dummy-proj-999/topics/foo",
+	}
+	err = service.Create(watch)
+	assert.NoError(t, err)
+
+	retryWith(10, func() func() {
+		watches, err := service.All()
+		if assert.NoError(t, err)	{
+			if len(watches) == 0 {
+				return func(){
+					t.Fatalf("len(watches) expects %v but was %v\n", 1, len(watches))
+				}
+			} else {
+				return nil // OK
+			}
+		} else {
+			return nil // Ignore Error
+		}
+	})
 
 	data := map[string]interface{}{
 		"selfLink":       "https://www.googleapis.com/storage/v1/b/" + bucket1 + "/o/dir1%2Ftestfile-20170220-1038.yml",
@@ -74,24 +123,26 @@ func TestProcessorExecute(t *testing.T) {
 	reader := bytes.NewReader(byteData)
 	err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
 	if assert.NoError(t, err) {
-		assert.Equal(t, 0, len(notifier.deletedUrls))
-		if assert.Equal(t, 1, len(notifier.updatedUrls)) {
-			assert.Equal(t, "gs://"+bucket1+"/"+path1, notifier.updatedUrls[0])
+		assert.Equal(t, 0, len(notifier.deleted))
+		if assert.Equal(t, 1, len(notifier.updated)) {
+			assert.Equal(t, "gs://"+bucket1+"/"+path1, notifier.updated[0].url)
+			assert.Equal(t, watch.Topic, notifier.updated[0].topic)
 		}
 	}
 
-	notifier.updatedUrls = []string{}
+	notifier.updated = []TopicUrl{}
 	reader = bytes.NewReader(byteData)
 	err = processor.execute(ctx, notifier, "not_exists", ioutil.NopCloser(reader))
 	if assert.NoError(t, err) {
-		assert.Equal(t, 0, len(notifier.updatedUrls))
-		if assert.Equal(t, 1, len(notifier.deletedUrls)) {
-			assert.Equal(t, "gs://"+bucket1+"/"+path1, notifier.deletedUrls[0])
+		assert.Equal(t, 0, len(notifier.updated))
+		if assert.Equal(t, 1, len(notifier.deleted)) {
+			assert.Equal(t, "gs://"+bucket1+"/"+path1, notifier.deleted[0].url)
+			assert.Equal(t, watch.Topic, notifier.deleted[0].topic)
 		}
 	}
 
-	notifier.deletedUrls = []string{}
-	notifier.updatedUrls = []string{}
+	notifier.deleted = []TopicUrl{}
+	notifier.updated = []TopicUrl{}
 
 	invalidData1 := map[string]interface{}{
 		"bucket": 1,
@@ -103,8 +154,8 @@ func TestProcessorExecute(t *testing.T) {
 	err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
 	assert.Error(t, err)
 	assert.Regexp(t, "bucket must be a string", err.Error())
-	assert.Equal(t, 0, len(notifier.updatedUrls))
-	assert.Equal(t, 0, len(notifier.deletedUrls))
+	assert.Equal(t, 0, len(notifier.updated))
+	assert.Equal(t, 0, len(notifier.deleted))
 
 	invalidData2 := map[string]interface{}{
 		"bucket": bucket1,
@@ -116,6 +167,6 @@ func TestProcessorExecute(t *testing.T) {
 	err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
 	assert.Error(t, err)
 	assert.Regexp(t, "name must be a string", err.Error())
-	assert.Equal(t, 0, len(notifier.updatedUrls))
-	assert.Equal(t, 0, len(notifier.deletedUrls))
+	assert.Equal(t, 0, len(notifier.updated))
+	assert.Equal(t, 0, len(notifier.deleted))
 }

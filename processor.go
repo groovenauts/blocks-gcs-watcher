@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 
 	"golang.org/x/net/context"
 
@@ -50,7 +49,16 @@ func (dp *DefaultProcessor) execute(ctx context.Context, notifier Notifier, stat
 		return fmt.Errorf("name must be a string but it was an %T (%v)", obj["name"], obj["name"])
 	}
 	url := "gs://" + bucket + "/" + name
-	topic := os.Getenv("PUBSUB_TOPIC")
+
+	service := &WatchService{ctx}
+	topic, err := service.topicFor(url)
+	if err != nil {
+		return err
+	}
+	if topic == "" {
+		log.Infof(ctx, "No topic found for %q", url)
+		return nil
+	}
 
 	switch state {
 	case "exists":

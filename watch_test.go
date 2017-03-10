@@ -25,7 +25,7 @@ func TestWatchCreate(t *testing.T) {
 	assert.NoError(t, err)
 	defer done()
 
-	ClearDatastore(t, ctx, "WATCH_KIND")
+	ClearDatastore(t, ctx, WATCH_KIND)
 
 	service := &WatchService{ctx}
 	watch1 := &Watch{

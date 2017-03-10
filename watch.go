@@ -167,3 +167,23 @@ func (s *WatchService) Delete(id string) error {
 	}
 	return nil
 }
+
+
+func (s *WatchService) topicFor(url string) (string, error) {
+	watches, err := s.All()
+	if err != nil {
+		return "", err
+	}
+	for _, w := range watches {
+		log.Debugf(s.ctx, "Pattern: %v, Topic: %v\n", w.Pattern, w.Topic)
+		re, err := regexp.Compile(w.Pattern)
+		if err != nil {
+			log.Errorf(s.ctx, "Invalid Regexp: %v",  w.Pattern)
+			return "", err
+		}
+		if re.MatchString(url) {
+			return w.Topic, nil
+		}
+	}
+	return "", nil
+}
