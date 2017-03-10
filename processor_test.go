@@ -93,33 +93,51 @@ func TestProcessorExecute(t *testing.T) {
 	processor := &DefaultProcessor{}
 
 	bucket1 := "test-bucket01"
-	path1 := "dir1/testfile-20170220-1038.yml"
+	dir1 := "dir1"
+	dir2 := "dir2"
+	dir3 := "dir3"
+	path1 := dir1 + "/testfile-20170220-1038.yml"
+	path2 := dir2 + "/testfile-20170220-1038.yml"
+	path3 := dir3 + "/testfile-20170220-1038.yml"
+
+	topic1 := "projects/dummy-proj-999/topics/topic1"
+	topic2 := "projects/dummy-proj-999/topics/topic2"
 
 	ClearDatastore(t, ctx, WATCH_KIND)
 	service := &WatchService{ctx}
-	watch := &Watch{
-		Seq: 1,
-		Pattern: `\Ags://` + bucket1 + `/`,
-		Topic: "projects/dummy-proj-999/topics/foo",
+	watches := []*Watch{
+		&Watch{
+			Seq: 1,
+			Pattern: `\Ags://` + bucket1 + `/` + dir1,
+			Topic: topic1,
+		},
+		&Watch{
+			Seq: 2,
+			Pattern: `\Ags://` + bucket1 + `/` + dir2,
+			Topic: topic2,
+		},
 	}
-	err = service.Create(watch)
-	assert.NoError(t, err)
+	for _, watch := range watches {
+		err = service.Create(watch)
+		assert.NoError(t, err)
+	}
 
 	retryWith(10, func() func() {
-		watches, err := service.All()
+		r, err := service.All()
 		if assert.NoError(t, err)	{
-			if len(watches) == 0 {
+			if len(r) == len(watches) {
+				return nil // OK
+			} else {
 				return func(){
 					t.Fatalf("len(watches) expects %v but was %v\n", 1, len(watches))
 				}
-			} else {
-				return nil // OK
 			}
 		} else {
 			return nil // Ignore Error
 		}
 	})
 
+	// Basic pattern - dir1
 	data := BuildData(bucket1, path1)
 	byteData, err := json.Marshal(data)
 	assert.NoError(t, err)
@@ -130,7 +148,7 @@ func TestProcessorExecute(t *testing.T) {
 		assert.Equal(t, 0, len(notifier.deleted))
 		if assert.Equal(t, 1, len(notifier.updated)) {
 			assert.Equal(t, "gs://"+bucket1+"/"+path1, notifier.updated[0].url)
-			assert.Equal(t, watch.Topic, notifier.updated[0].topic)
+			assert.Equal(t, topic1, notifier.updated[0].topic)
 		}
 	}
 
@@ -141,10 +159,38 @@ func TestProcessorExecute(t *testing.T) {
 		assert.Equal(t, 0, len(notifier.updated))
 		if assert.Equal(t, 1, len(notifier.deleted)) {
 			assert.Equal(t, "gs://"+bucket1+"/"+path1, notifier.deleted[0].url)
-			assert.Equal(t, watch.Topic, notifier.deleted[0].topic)
+			assert.Equal(t, topic1, notifier.deleted[0].topic)
 		}
 	}
 
+	// Basic pattern - dir2
+	notifier.deleted = []TopicUrl{}
+	notifier.updated = []TopicUrl{}
+	byteData, err = json.Marshal(BuildData(bucket1, path2))
+	assert.NoError(t, err)
+	reader = bytes.NewReader(byteData)
+	err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
+	if assert.NoError(t, err) {
+		assert.Equal(t, 0, len(notifier.deleted))
+		if assert.Equal(t, 1, len(notifier.updated)) {
+			assert.Equal(t, "gs://"+bucket1+"/"+path2, notifier.updated[0].url)
+			assert.Equal(t, topic2, notifier.updated[0].topic)
+		}
+	}
+
+	// Valid but not hit
+	notifier.deleted = []TopicUrl{}
+	notifier.updated = []TopicUrl{}
+	byteData, err = json.Marshal(BuildData(bucket1, path3))
+	assert.NoError(t, err)
+	reader = bytes.NewReader(byteData)
+	err = processor.execute(ctx, notifier, "exists", ioutil.NopCloser(reader))
+	if assert.NoError(t, err) {
+		assert.Equal(t, 0, len(notifier.updated))
+		assert.Equal(t, 0, len(notifier.deleted))
+	}
+
+	// Invalid data
 	notifier.deleted = []TopicUrl{}
 	notifier.updated = []TopicUrl{}
 
