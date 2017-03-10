@@ -8,29 +8,22 @@ import (
 	"google.golang.org/appengine/log"
 )
 
-type (
-	EntityNotFound struct {
-		cause error
-	}
-)
+type EntityNotFound struct {
+	cause error
+}
+
 func (e *EntityNotFound) Error() string {
 	return e.cause.Error()
 }
 
-type (
-	Watch struct {
-		ID string      `form:"-",datastore:"-"` // from key
-		Seq int        `form:"seq"`
-		Pattern string `form:"pattern"`
-		Topic string   `form:"topic"`
-	}
+type Watch struct {
+	ID string      `form:"-",datastore:"-"` // from key
+	Seq int        `form:"seq"`
+	Pattern string `form:"pattern"`
+	Topic string   `form:"topic"`
+}
 
-	Watches []*Watch
-
-	WatchService struct {
-		ctx context.Context
-	}
-)
+type Watches []*Watch
 
 func (w Watches) Len() int {
 	return len(w)
@@ -44,6 +37,10 @@ func (w Watches) Swap(i, j int) {
     w[i], w[j] = w[j], w[i]
 }
 
+
+type WatchService struct {
+	ctx context.Context
+}
 
 const (
 	WATCH_KIND = "Watches"
