@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"regexp"
 	"sort"
 
 	"golang.org/x/net/context"
@@ -16,12 +18,36 @@ func (e *EntityNotFound) Error() string {
 	return e.cause.Error()
 }
 
+type ValidationError struct {
+	msg string
+}
+
+func (e *ValidationError) Error() string {
+	return e.msg
+}
+
 type Watch struct {
 	ID string      `form:"-",datastore:"-"` // from key
 	Seq int        `form:"seq"`
 	Pattern string `form:"pattern"`
 	Topic string   `form:"topic"`
 }
+
+var (
+	TOPIC_REGEXP = regexp.MustCompile(`\Aprojects/[^/]+/topics/[^/]+\z`)
+)
+
+func (w *Watch) Validate() error {
+	_, err := regexp.Compile(w.Pattern)
+	if err != nil {
+		return &ValidationError{fmt.Sprintf("Invalid pattern: %v cause of %v", w.Pattern, err)}
+	}
+	if !TOPIC_REGEXP.MatchString(w.Topic) {
+		return &ValidationError{fmt.Sprintf("Invalid topic: %v", w.Topic)}
+	}
+	return nil
+}
+
 
 type Watches []*Watch
 
@@ -99,6 +125,10 @@ func (s *WatchService) Find(id string) (*Watch, error) {
 }
 
 func (s *WatchService) Create(w *Watch) error {
+	err := w.Validate()
+	if err != nil {
+		return err
+	}
 	key := datastore.NewIncompleteKey(s.ctx, WATCH_KIND, nil)
 	res, err := datastore.Put(s.ctx, key, w)
 	if err != nil {
@@ -110,6 +140,10 @@ func (s *WatchService) Create(w *Watch) error {
 }
 
 func (s *WatchService) Update(w *Watch) error {
+	err := w.Validate()
+	if err != nil {
+		return err
+	}
 	key, err := datastore.DecodeKey(w.ID)
 	if err != nil {
 		return err
