@@ -17,15 +17,15 @@ import (
 	// "google.golang.org/appengine/taskqueue"
 )
 
-type adminHandler struct{
+type adminHandler struct {
 	flash *FlashHandler
 }
 
 func init() {
 	h := &adminHandler{
 		flash: &FlashHandler{
-			path: "/admin/",
-			expire: 10*time.Minute,
+			path:   "/admin/",
+			expire: 10 * time.Minute,
 		},
 	}
 
@@ -51,9 +51,9 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 }
 
 type IndexRes struct {
-	Flash *Flash
+	Flash   *Flash
 	Watches Watches
-	NewSeq int
+	NewSeq  int
 }
 
 func (h *adminHandler) index(c echo.Context) error {
@@ -73,9 +73,9 @@ func (h *adminHandler) index(c echo.Context) error {
 	}
 	log.Debugf(ctx, "indexPage watches: %v\n", watches)
 	r := IndexRes{
-		Flash: c.Get("flash").(*Flash),
+		Flash:   c.Get("flash").(*Flash),
 		Watches: watches,
-		NewSeq: maxSeq + 1,
+		NewSeq:  maxSeq + 1,
 	}
 	log.Debugf(ctx, "indexPage r: %v\n", r)
 	return c.Render(http.StatusOK, "index", &r)
@@ -108,11 +108,10 @@ func (h *adminHandler) delete(c echo.Context, w *Watch) error {
 	return c.Redirect(http.StatusFound, "/admin/watches")
 }
 
-
 type EditRes struct {
-	Flash *Flash
+	Flash   *Flash
 	Watches Watches
-	Target string
+	Target  string
 }
 
 func (h *adminHandler) edit(c echo.Context, w *Watch) error {
@@ -127,9 +126,9 @@ func (h *adminHandler) edit(c echo.Context, w *Watch) error {
 	}
 	log.Debugf(ctx, "edit3: %v\n", w)
 	r := EditRes{
-		Flash: c.Get("flash").(*Flash),
+		Flash:   c.Get("flash").(*Flash),
 		Watches: watches,
-		Target: w.ID,
+		Target:  w.ID,
 	}
 	log.Debugf(ctx, "edit4: %q\n", r.Target)
 	return c.Render(http.StatusOK, "edit", &r)
@@ -149,9 +148,6 @@ func (h *adminHandler) update(c echo.Context, w *Watch) error {
 	return c.Redirect(http.StatusFound, "/admin/watches")
 }
 
-
-
-
 func (h *adminHandler) wrap(f func(c echo.Context) error) func(c echo.Context) error {
 	return h.flash.with(h.withAEContext(f))
 }
@@ -164,8 +160,8 @@ func (h *adminHandler) withAEContext(f func(c echo.Context) error) func(c echo.C
 	}
 }
 
-func (h *adminHandler) withId(f func (c echo.Context, w *Watch) error) func (c echo.Context) error {
-	return h.wrap(func(c echo.Context) error{
+func (h *adminHandler) withId(f func(c echo.Context, w *Watch) error) func(c echo.Context) error {
+	return h.wrap(func(c echo.Context) error {
 		ctx := c.Get("aecontext").(context.Context)
 		service := &WatchService{ctx}
 		w, err := service.Find(c.Param("id"))

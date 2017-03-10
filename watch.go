@@ -27,10 +27,10 @@ func (e *ValidationError) Error() string {
 }
 
 type Watch struct {
-	ID string      `form:"-",datastore:"-"` // from key
-	Seq int        `form:"seq"`
+	ID      string `form:"-",datastore:"-"` // from key
+	Seq     int    `form:"seq"`
 	Pattern string `form:"pattern"`
-	Topic string   `form:"topic"`
+	Topic   string `form:"topic"`
 }
 
 var (
@@ -48,7 +48,6 @@ func (w *Watch) Validate() error {
 	return nil
 }
 
-
 type Watches []*Watch
 
 func (w Watches) Len() int {
@@ -60,9 +59,8 @@ func (w Watches) Less(i, j int) bool {
 }
 
 func (w Watches) Swap(i, j int) {
-    w[i], w[j] = w[j], w[i]
+	w[i], w[j] = w[j], w[i]
 }
-
 
 type WatchService struct {
 	ctx context.Context
@@ -168,7 +166,6 @@ func (s *WatchService) Delete(id string) error {
 	return nil
 }
 
-
 func (s *WatchService) topicFor(url string) (string, error) {
 	watches, err := s.All()
 	if err != nil {
@@ -178,7 +175,7 @@ func (s *WatchService) topicFor(url string) (string, error) {
 		log.Debugf(s.ctx, "Pattern: %v, Topic: %v\n", w.Pattern, w.Topic)
 		re, err := regexp.Compile(w.Pattern)
 		if err != nil {
-			log.Errorf(s.ctx, "Invalid Regexp: %v",  w.Pattern)
+			log.Errorf(s.ctx, "Invalid Regexp: %v", w.Pattern)
 			return "", err
 		}
 		if re.MatchString(url) {

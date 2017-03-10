@@ -29,9 +29,9 @@ func TestWatchCreate(t *testing.T) {
 
 	service := &WatchService{ctx}
 	watch1 := &Watch{
-		Seq: 1,
+		Seq:     1,
 		Pattern: `\Ags://bucket1/dir1/`,
-		Topic: "projects/dummy-proj-999/topics/foo",
+		Topic:   "projects/dummy-proj-999/topics/foo",
 	}
 	// Valid Pattern
 	err = service.Create(watch1)
@@ -40,9 +40,9 @@ func TestWatchCreate(t *testing.T) {
 
 	// Invalid pattern
 	watch2 := &Watch{
-		Seq: 2,
+		Seq:     2,
 		Pattern: `\Ags://bucket1/(?dir1)/`,
-		Topic: "projects/dummy-proj-999/topics/foo",
+		Topic:   "projects/dummy-proj-999/topics/foo",
 	}
 	err = service.Create(watch2)
 	if assert.Error(t, err) {
@@ -52,9 +52,9 @@ func TestWatchCreate(t *testing.T) {
 
 	// Invalid Topic
 	watch3 := &Watch{
-		Seq: 3,
+		Seq:     3,
 		Pattern: `\Ags://bucket1/dir1/`,
-		Topic: "topic-only",
+		Topic:   "topic-only",
 	}
 	err = service.Create(watch3)
 	if assert.Error(t, err) {

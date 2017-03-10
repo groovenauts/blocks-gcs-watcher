@@ -9,7 +9,7 @@ import (
 
 type (
 	FlashHandler struct {
-		path string
+		path   string
 		expire time.Duration
 	}
 

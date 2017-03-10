@@ -112,19 +112,19 @@ func TestProcessorExecute(t *testing.T) {
 	service := &WatchService{ctx}
 	watches := []*Watch{
 		&Watch{
-			Seq: 1,
+			Seq:     1,
 			Pattern: `\Ags://` + bucket1 + `/` + dir1,
-			Topic: topic1,
+			Topic:   topic1,
 		},
 		&Watch{
-			Seq: 2,
+			Seq:     2,
 			Pattern: regexp.QuoteMeta(ext1) + `\z`,
-			Topic: topic3,
+			Topic:   topic3,
 		},
 		&Watch{
-			Seq: 3,
+			Seq:     3,
 			Pattern: `\Ags://` + bucket1 + `/` + dir2,
-			Topic: topic2,
+			Topic:   topic2,
 		},
 	}
 	for _, watch := range watches {
@@ -134,11 +134,11 @@ func TestProcessorExecute(t *testing.T) {
 
 	retryWith(10, func() func() {
 		r, err := service.All()
-		if assert.NoError(t, err)	{
+		if assert.NoError(t, err) {
 			if len(r) == len(watches) {
 				return nil // OK
 			} else {
-				return func(){
+				return func() {
 					t.Fatalf("len(watches) expects %v but was %v\n", 1, len(watches))
 				}
 			}
@@ -149,7 +149,7 @@ func TestProcessorExecute(t *testing.T) {
 
 	type Pattern struct {
 		bucket string
-		path string
+		path   string
 		topics []string
 	}
 
@@ -187,7 +187,7 @@ func TestProcessorExecute(t *testing.T) {
 
 	invalidData1 := map[string]interface{}{
 		"bucket": 1,
-		"name": path1,
+		"name":   path1,
 	}
 	byteData, err := json.Marshal(invalidData1)
 	assert.NoError(t, err)
@@ -200,7 +200,7 @@ func TestProcessorExecute(t *testing.T) {
 
 	invalidData2 := map[string]interface{}{
 		"bucket": bucket1,
-		"name": 2,
+		"name":   2,
 	}
 	byteData, err = json.Marshal(invalidData2)
 	assert.NoError(t, err)
