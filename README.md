@@ -40,8 +40,11 @@ $ dev_appserver.py \
   ./app.yaml
 ```
 
-
-
+1. open http://localhost:8080/_ah/login
+2. Check `Sign in as Administrator`
+3. Click `Login`
+4. Open http://localhost:8080/admin/watches
+5. Add watch settings
 
 
 ## Production Envirionment
@@ -84,7 +87,6 @@ See also [Object Change NotificationをApp Engineで受け取る設定](http://q
 $ appcfg.py \
   -A <YOUR_GCP_PROJECT> \
   -E GOOGLE_SITE_VERIFICATION:<YOUR_GOOGLE_SITE_VERIFICATION> \
-  -E PUBSUB_TOPIC:<YOUR_PUBSUB_TOPIC> \
   -V $(cat VERSION) \
   update .
 ```
@@ -94,6 +96,11 @@ If you want to set it active soon, run the following command
 ```
 $ gcloud app services set-traffic gcs-watcher --splits=$(cat VERSION)=1
 ```
+
+1. open https://<YOUR_HOST>/admin/watches
+2. Add watch settings
+
+
 
 ### Test
 

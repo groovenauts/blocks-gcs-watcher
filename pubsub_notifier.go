@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
 	pubsub "google.golang.org/api/pubsub/v1"
@@ -49,9 +47,8 @@ func NewPubsubNotifier(ctx context.Context) (Notifier, error) {
 	return &notifier, nil
 }
 
-func (n *PubsubNotifier) Updated(ctx context.Context, url string) error {
-	log.Debugf(ctx, "PubsubNotifier#Updated url: %v\n", url)
-	topic := os.Getenv("PUBSUB_TOPIC")
+func (n *PubsubNotifier) Updated(ctx context.Context, topic, url string) error {
+	log.Debugf(ctx, "PubsubNotifier#Updated topic: %v url: %v\n", topic, url)
 
 	// https://github.com/google/google-api-go-client/blob/master/examples/pubsub.go#L236-L244
 	msg := &pubsub.PubsubMessage{
@@ -68,6 +65,6 @@ func (n *PubsubNotifier) Updated(ctx context.Context, url string) error {
 	return nil
 }
 
-func (n *PubsubNotifier) Deleted(ctx context.Context, url string) error {
+func (n *PubsubNotifier) Deleted(ctx context.Context, topic, url string) error {
 	return nil
 }

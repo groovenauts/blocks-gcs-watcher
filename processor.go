@@ -50,11 +50,21 @@ func (dp *DefaultProcessor) execute(ctx context.Context, notifier Notifier, stat
 	}
 	url := "gs://" + bucket + "/" + name
 
+	service := &WatchService{ctx}
+	topic, err := service.topicFor(url)
+	if err != nil {
+		return err
+	}
+	if topic == "" {
+		log.Infof(ctx, "No topic found for %q", url)
+		return nil
+	}
+
 	switch state {
 	case "exists":
-		err = notifier.Updated(ctx, url)
+		err = notifier.Updated(ctx, topic, url)
 	case "not_exists":
-		err = notifier.Deleted(ctx, url)
+		err = notifier.Deleted(ctx, topic, url)
 	default:
 		err = fmt.Errorf("Unknown state %v is given", state)
 	}

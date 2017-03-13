@@ -31,7 +31,7 @@ func TestNotifierFileUpdated(t *testing.T) {
 	notifier := &PubsubNotifier{publisher}
 
 	url := "gs://test-bucket01/path/to/file"
-	err = notifier.Updated(ctx, url)
+	err = notifier.Updated(ctx, "topic", url)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(publisher.messages))
 
